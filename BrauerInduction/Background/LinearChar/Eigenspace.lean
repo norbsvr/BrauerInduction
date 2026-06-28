@@ -250,8 +250,6 @@ private lemma psiEigenspace_ne_bot_of_hom_aux
   -- The goal after `ext x` is the pointwise zero statement for `f`.
   exact LinearMap.mem_eqLocus.mp hxBot
 
-
-
 /--
 A nonzero morphism from the one-dimensional representation associated to `ψ`
 produces a nonzero `ψ`-eigenspace.
@@ -270,24 +268,6 @@ lemma psiEigenspace_ne_bot_of_hom
     intro a x
     exact FDRep.ofLinearChar_rho_apply
       (k := k) ψ a x
-  exact psiEigenspace_ne_bot_of_hom_aux ρ A ψ hσ f hf
-
-/--
-A nonzero morphism from the universe-stable one-dimensional representation
-associated to `ψ` produces a nonzero `ψ`-eigenspace.
--/
-lemma psiEigenspace_ne_bot_of_stable_hom
-    (ρ : FDRep k G)
-    (A : Subgroup G)
-    (ψ : A →* kˣ)
-    (f : FDRep.ofLinearChar ψ ⟶ ρ.res A)
-    (hf : f ≠ 0) :
-    psiEigenspace ρ A ψ ≠ ⊥ := by
-  have hσ :
-      ∀ (a : A) (x : (FDRep.ofLinearChar ψ)),
-        (FDRep.ofLinearChar ψ).ρ a x = (ψ a : k) • x := by
-    intro a x
-    exact FDRep.ofLinearChar_rho_apply ψ a x
   exact psiEigenspace_ne_bot_of_hom_aux ρ A ψ hσ f hf
 
 lemma psiEigenspace_invariant_of_inertia_eq_top

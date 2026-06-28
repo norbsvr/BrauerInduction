@@ -19,8 +19,11 @@ Main definitions:
 * induction from the top subgroup;
 * transitivity of induction.
 
-Several statements use explicit universe shapes inherited from Mathlib's
-`Rep.ind`, `Rep.coind`, and Frobenius reciprocity APIs.
+Several subgroup-level statements require the ambient group to be in the same
+universe as the coefficient ring.  This reflects the universe shape of Mathlib
+`FDRep`: the carrier of an object of `FDRep k G` lives in the coefficient
+universe, while induced and coinduced `Rep`s are built from the target group.
+
 -/
 
 universe u v v' w
@@ -34,7 +37,8 @@ namespace FDRep
 section HomInduction
 
 variable {k : Type u} [CommRing k]
-variable {G H : Type u} [Group G] [Group H]
+variable {G : Type v} [Group G]
+variable {H : Type u} [Group H]
 
 /--
 Induction of a finite-dimensional representation along a group homomorphism.
@@ -116,7 +120,7 @@ section SubgroupInduction
 
 variable {k : Type u} [CommRing k] {G : Type u} [Group G]
 
-/-- Induction from a subgroup defined a special case of `indHom`. -/
+/-- Induction from a subgroup, defined a special case of `indHom`. -/
 noncomputable abbrev ind [Finite G] (H : Subgroup G) (σ : FDRep k H) : FDRep k G :=
   indHom H.subtype σ
 
@@ -146,7 +150,8 @@ end SubgroupInduction
 section HomCoinduction
 
 variable {k : Type u} [CommRing k] [IsNoetherianRing k]
-variable {G H : Type u} [Group G] [Group H]
+variable {G : Type v} [Group G]
+variable {H : Type u} [Group H]
 
 /--
 Coinduction of a finite-dimensional representation along a group homomorphism.
@@ -240,7 +245,7 @@ section SubgroupCoinduction
 
 variable {k : Type u} [CommRing k] {G : Type u} [Group G]
 
-/-- Coinduction from a subgroup defined as a special case of `coindHom`. -/
+/-- Coinduction from a subgroup, defined as a special case of `coindHom`. -/
 noncomputable abbrev coind [Finite G] [IsNoetherianRing k]
     (H : Subgroup G) (σ : FDRep k H) : FDRep k G :=
   coindHom H.subtype σ
@@ -280,9 +285,6 @@ variable {G : Type u} [Group G]
 open Classical in
 /--
 The isomorphism `Ind ≅ Coind` in `FDRep` for finite groups.
-
-This is separated-universe in `k` and `G`. The input representation must live in
-carrier universe `max u w`, matching the universe shape of `Rep.indCoindIso`.
 -/
 noncomputable def indIsoCoind [Finite G]
     (I : Subgroup G)
@@ -318,7 +320,8 @@ end indIsoCoind
 section HomFrobeniusReciprocity
 
 variable {k : Type u} [CommRing k]
-variable {G H : Type u} [Group G] [Group H] [Finite H]
+variable {G : Type v} [Group G]
+variable {H : Type u} [Group H] [Finite H]
 
 /--
 Frobenius reciprocity for induction and pullback along a group homomorphism.
@@ -340,14 +343,14 @@ noncomputable def indHomComapEquiv
   let B : Rep k H := UH.obj ρ
   let ρres : FDRep k G := comap (G := H) (H := G) φ ρ
 
-  let e₁ : (indHom φ σ ⟶ ρ) ≃ₗ[k] (Rep.ind φ A ⟶ B) := by
-    exact (FDRep.forget₂HomLinearEquiv (indHom φ σ) ρ).symm
+  let e₁ : (indHom φ σ ⟶ ρ) ≃ₗ[k] (Rep.ind φ A ⟶ B) :=
+    (FDRep.forget₂HomLinearEquiv (indHom φ σ) ρ).symm
 
   let e₂ : (Rep.ind φ A ⟶ B) ≃ₗ[k] (A ⟶ Rep.res φ B) :=
     Rep.indResHomEquiv φ A B
 
-  let e₃ : (A ⟶ Rep.res φ B) ≃ₗ[k] (σ ⟶ ρres) := by
-    exact FDRep.forget₂HomLinearEquiv σ ρres
+  let e₃ : (A ⟶ Rep.res φ B) ≃ₗ[k] (σ ⟶ ρres) :=
+    FDRep.forget₂HomLinearEquiv σ ρres
 
   exact e₁.trans (e₂.trans e₃)
 

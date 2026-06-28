@@ -15,7 +15,7 @@ corresponding decomposition into a finite sum of irreducible characters.
 Consequently, every virtual character lies in their `ℤ`-linear span.
 -/
 
-universe u v w
+universe u v
 
 namespace ClassFun
 
@@ -53,7 +53,7 @@ theorem char_eq_sum_simples
 
 /--
 The set of characters of simple finite-dimensional representations of `G`
-over `k`, in representation universe `w`.
+over `k`.
 -/
 def irreducibleCharacterSet
     (k : Type u) [Field k]

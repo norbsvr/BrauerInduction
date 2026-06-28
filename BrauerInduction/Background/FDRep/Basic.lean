@@ -14,7 +14,6 @@ Main contents:
 * duals and internal Homs;
 * zero objects and zero-dimensionality lemmas;
 * stable subrepresentations and the mono/injective criterion;
-* universe lifting;
 * the finite-dimensional left regular and trivial representations.
 -/
 

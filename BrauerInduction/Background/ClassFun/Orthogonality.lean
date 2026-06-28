@@ -89,9 +89,8 @@ open Classical in
 A class function is zero if its pairing with the character of every simple
 representation vanishes.
 
-It is enough to consider simple representations in the canonical universe
-`max u v`, since the proof decomposes the left regular representation in that
-universe.
+The proof decomposes the left regular representation into simple summands and
+uses the resulting action of the class function on those summand.
 -/
 lemma classFun_eq_zero_of_orthogonal_simples
     {G : Type u} [Group G] [Fintype G] [CharZero k] [IsAlgClosed k]

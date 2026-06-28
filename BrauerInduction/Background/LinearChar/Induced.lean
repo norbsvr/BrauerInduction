@@ -89,24 +89,6 @@ lemma nonempty_iso_indLin_iff_coindLin
     exact ⟨i ≪≫ (FDRep.indLinCoindLinIso (k := k) (G := G) H ψ).symm⟩
 
 /--
-Transporting a stable linear-character representation along a group equivalence
-gives the stable linear-character representation obtained by precomposing with
-the inverse equivalence.
-
-This same-universe version is the one needed for subgroup transport, such as
-`H ≃* H.map I.subtype`.
--/
-noncomputable def ofLinearChar_transportEquiv_iso
-    {Γ Δ : Type v} [Group Γ] [Group Δ]
-    (e : Γ ≃* Δ)
-    (θ : Γ →* kˣ) :
-    ((FDRep.transportEquiv (k := k) e).functor.obj
-        (FDRep.ofLinearChar θ))
-      ≅
-    FDRep.ofLinearChar (θ.comp e.symm.toMonoidHom) := by
-  rfl
-
-/--
 Transitivity of induction for representations induced from linear
 characters. If `H ≤ I ≤ G` and `θ` is a linear character of `H`, then inducing
 `indLin H θ` from `I` to `G` agrees with inducing the transported character

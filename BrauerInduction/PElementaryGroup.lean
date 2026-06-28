@@ -701,12 +701,4 @@ lemma zpowers_of_isOfFinOrder [Fact p.Prime]
 
 end IsPElementary
 
-/-!
-## Transitional subgroup aliases
-
-The preferred API is now group-level: write `IsPElementary p H` when
-`H : Subgroup G`.  These aliases can be kept temporarily while downstream files
-are migrated.
--/
-
 end BrauerInduction

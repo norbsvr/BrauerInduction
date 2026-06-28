@@ -12,7 +12,7 @@ represented directly by a monoid homomorphism
 
 There is no separate `LinearChar` type. The construction `FDRep.ofLinearChar ψ`
 is the associated one-dimensional representation: its underlying `k`-module is
-`k`, and an element `g : G` acts
+`k`, and an element `g : G` acts by scalar multiplication by `ψ g`.
 
 This file proves the basic API for these representations, including their
 action on vectors, their characters, their finrank, and compatibility with
@@ -143,5 +143,21 @@ lemma LinearChar.char_ofTop_ulift_of
   exact FDRep.char_ofLinearChar
     ψ
     ⟨g, Subgroup.mem_top g⟩
+
+
+/--
+Transporting the representation attached to a linear character along a group
+equivalence gives the representation attached to the character precomposed with
+the inverse equivalence.
+-/
+noncomputable def FDRep.ofLinearChar_transportEquiv_iso
+    {H : Type v} [Group H]
+    (e : G ≃* H)
+    (θ : G →* kˣ) :
+    ((FDRep.transportEquiv (k := k) e).functor.obj
+        (FDRep.ofLinearChar θ))
+      ≅
+    FDRep.ofLinearChar (θ.comp e.symm.toMonoidHom) := by
+  rfl
 
 end Group
