@@ -493,8 +493,7 @@ lemma psiEZeta_apply_a_inv_mem_Lambda [Finite G]
           ⟨a⁻¹, haInvMem⟩ : kˣ) : k)
         =
       (((chiCyc (k := k) (a := a) ζ)
-        (E_to_Cyc p a ha ⟨a⁻¹, haInvMem⟩) : kˣ) : k) :=
-    congrArg (fun u : kˣ => (u : k)) hψ
+        (E_to_Cyc p a ha ⟨a⁻¹, haInvMem⟩) : kˣ) : k) := Units.val_inj.mpr hψ
 
   rw [hψk]
 
@@ -689,7 +688,7 @@ lemma sum_psiEZeta_eq_zero_of_not_mem_P
   let H_elem := associatedSubgroup ha
   let iso := mulEquivProd H_elem
   let c_sub := (iso.symm y).1
-  let u_sub := (iso.symm y).2
+  let s_sub := (iso.symm y).2
 
   obtain ⟨n, hn_eq⟩ : ∃ n : ℤ, (c_sub : G) = a ^ n := by
     obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp c_sub.property
@@ -702,8 +701,6 @@ lemma sum_psiEZeta_eq_zero_of_not_mem_P
         simp only [E_to_Cyc_apply, E_Cyc_equiv_apply_coe, H_elem, c_sub, iso]
       exact hcyc.trans hn_eq
 
-  let u_sub := (iso.symm y_sub).2
-
   obtain ⟨n, hn_eq⟩ : ∃ n : ℤ, (c_sub : G) = a ^ n := by
     obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp c_sub.property
     exact ⟨n, hn.symm⟩
@@ -712,19 +709,19 @@ lemma sum_psiEZeta_eq_zero_of_not_mem_P
     intro h_div
     have h_an_one : a ^ n = 1 := orderOf_dvd_iff_zpow_eq_one.mp h_div
     have hc_one : (c_sub : G) = 1 := by rw [hn_eq, h_an_one]
-    have h_prod : (c_sub : G) * (u_sub : G) = y_G := by
-      have h_eval : (iso (c_sub, u_sub) : G) =
-          (c_sub : G) * (u_sub : G) := rfl
+    have h_prod : (c_sub : G) * (s_sub : G) = y_G := by
+      have h_eval : (iso (c_sub, s_sub) : G) =
+          (c_sub : G) * (s_sub : G) := rfl
       rw [← h_eval]
       exact congrArg Subtype.val (iso.apply_symm_apply y_sub)
     have hy_in_P : y_G ∈ P_of_Z p a := by
-      have h_y_eq_u : y_G = (u_sub : G) := by
+      have h_y_eq_u : y_G = (s_sub : G) := by
         calc
-          y_G = (c_sub : G) * (u_sub : G) := h_prod.symm
-          _ = 1 * (u_sub : G) := by rw [hc_one]
-          _ = (u_sub : G) := one_mul _
+          y_G = (c_sub : G) * (s_sub : G) := h_prod.symm
+          _ = 1 * (s_sub : G) := by rw [hc_one]
+          _ = (s_sub : G) := one_mul _
       rw [h_y_eq_u]
-      exact u_sub.property
+      exact s_sub.property
     exact hyP hy_in_P
 
   have h_sum :
@@ -843,12 +840,12 @@ lemma phi_fun_eq_phiSum
   · have h_in_P :
         ((aInvE * x : E_subgroup p a) : G) ∈ P_of_Z  p a := by
       have h_fiber := (PElementary.mem_associatedSubgroup_fiber ha x).mp h_reg
-      obtain ⟨u, hu_P, h_x_eq⟩ := h_fiber
-      have h_ax_eq_u : ((aInvE * x : E_subgroup p a) : G) = u := by
+      obtain ⟨s, hs_P, h_x_eq⟩ := h_fiber
+      have h_ax_eq_s : ((aInvE * x : E_subgroup p a) : G) = s := by
         push_cast
         rw [h_x_eq, inv_mul_cancel_left]
-      rw [h_ax_eq_u]
-      exact hu_P
+      rw [h_ax_eq_s]
+      exact hs_P
     have h_psi_one :
         ∀ ζ : rootsOfUnity (orderOf a) k,
             psiEZeta p ha ζ (aInvE * x) = 1 := by
@@ -1146,7 +1143,7 @@ noncomputable def bernsteinIndex (x : G) : ℕ :=
 
 open Subgroup PElementary in
 /--
-Evaluation of `f_a` at `a * u`, where `u` is `p`-unipotent and commutes with
+Evaluation of `f_a` at `a * u`, where `u` is `p`-singular and commutes with
 `a`, as a filtered count of conjugates of `u` lying in `P_Z(a)`.
 -/
 lemma f_a_apply_a_eq_bernsteinIndex
@@ -1199,10 +1196,10 @@ lemma f_a_apply_self_coprime
 
 end EvaluationAtA
 
-section EvaluationAtRegularTimesUnipotent
+section EvaluationAtRegularTimesSingular
 
 /-!
-## Evaluation of `f_a` at `a * u`
+## Evaluation of `f_a` at `a * s`
 
 This section evaluates `f_a` on elements with `p`-regular part `a`.  The
 formula is first written as a filtered conjugacy count and then converted into
@@ -1215,37 +1212,37 @@ variable {G : Type v} [Group G] [Fact p.Prime]
 
 open Classical PElementary Subgroup in
 /--
-Evaluates f_a at x = a * u, reducing the induction sum to a count of elements in C_G(a)
-that conjugate u into the Sylow p-subgroup P_Z(a).
+Evaluates f_a at x = a * s, reducing the induction sum to a count of elements in C_G(a)
+that conjugate s into the Sylow p-subgroup P_Z(a).
 -/
-lemma f_a_apply_mul_pUnipotent_eq_sum
+lemma f_a_apply_mul_pSingular_eq_sum
     [CharZero k] [Fintype G]
-    {a : G} (ha : IsPRegular p a) (u : G) (hu_unip : IsPUnipotent p u) (hu_comm : Commute a u) :
-    f_a (k := k) (p := p) a (a * u) =
+    {a : G} (ha : IsPRegular p a) (s : G) (hu_sing : IsPSingular p s) (hu_comm : Commute a s) :
+    f_a (k := k) (p := p) a (a * s) =
     (Nat.card (E_subgroup p a) : k)⁻¹ *
       ((Finset.univ.filter
-          (fun x => x ∈ centralizer ({a} : Set G) ∧ x * u * x⁻¹ ∈ P_of_Z p a)).card : k)  *
+          (fun x => x ∈ centralizer ({a} : Set G) ∧ x * s * x⁻¹ ∈ P_of_Z p a)).card : k)  *
       (orderOf a : k) := by
   unfold f_a
   rw [ClassFun.ind_apply_eq_inv_mul_sum_mul_inv]
   simp only [Nat.card_eq_fintype_card]
   dsimp [phi_fun]
   have hfa := isOfFinOrder_of_finite a
-  have hfu := isOfFinOrder_of_finite u
+  have hfs := isOfFinOrder_of_finite s
   have h_sum :
-      (∑ x : G, if h : x * (a * u) * x⁻¹ ∈ E_subgroup p a
-                then if Group.pRegular p (x * (a * u) * x⁻¹) = a
+      (∑ x : G, if h : x * (a * s) * x⁻¹ ∈ E_subgroup p a
+                then if Group.pRegular p (x * (a * s) * x⁻¹) = a
                 then (orderOf a : k) else 0 else 0) =
       ∑ x ∈ Finset.univ.filter
-        (fun x => x ∈ centralizer ({a} : Set G) ∧ x * u * x⁻¹ ∈ P_of_Z p a), (orderOf a : k) := by
+        (fun x => x ∈ centralizer ({a} : Set G) ∧ x * s * x⁻¹ ∈ P_of_Z p a), (orderOf a : k) := by
     rw [Finset.sum_filter]
     apply Finset.sum_congr rfl
     intro x _
     have h_reg :
-        Group.pRegular p (x * (a * u) * x⁻¹) = x * a * x⁻¹ := by
+        Group.pRegular p (x * (a * s) * x⁻¹) = x * a * x⁻¹ := by
       rw [Group.pRegular_conj]
-      have h_au : Group.pRegular p (a * u) = a := by
-        rw [Group.pRegular_mul_eq_left_of_right_pUnipotent_commute p hfu hfa hu_unip hu_comm.symm]
+      have h_au : Group.pRegular p (a * s) = a := by
+        rw [Group.pRegular_mul_eq_left_of_right_pSingular_commute p hfs hfa hu_sing hu_comm.symm]
         exact Group.pRegular_eq_self_of_isPRegular p hfa ha
       rw [h_au]
     by_cases hxC : x ∈ centralizer ({a} : Set G)
@@ -1254,42 +1251,42 @@ lemma f_a_apply_mul_pUnipotent_eq_sum
         have h_comm_xa : x * a = a * x := by exact Eq.symm (SemiconjBy.eq (hxC a rfl))
         calc x * a * x⁻¹ = a * x * x⁻¹ := by rw [h_comm_xa]
           _ = a := by group
-      have h_reg_eq_a : Group.pRegular p (x * (a * u) * x⁻¹) = a := by rw [h_reg, hax]
-      have h_xaux : x * (a * u) * x⁻¹ = a * (x * u * x⁻¹) := by
-        calc x * (a * u) * x⁻¹ = (x * a * x⁻¹) * (x * u * x⁻¹) := by group
-          _ = a * (x * u * x⁻¹) := by rw [hax]
-      have h_E_iff : x * (a * u) * x⁻¹ ∈ E_subgroup p a ↔ x * u * x⁻¹ ∈ P_of_Z p a := by
+      have h_reg_eq_a : Group.pRegular p (x * (a * s) * x⁻¹) = a := by rw [h_reg, hax]
+      have h_xaux : x * (a * s) * x⁻¹ = a * (x * s * x⁻¹) := by
+        calc x * (a * s) * x⁻¹ = (x * a * x⁻¹) * (x * s * x⁻¹) := by group
+          _ = a * (x * s * x⁻¹) := by rw [hax]
+      have h_E_iff : x * (a * s) * x⁻¹ ∈ E_subgroup p a ↔ x * s * x⁻¹ ∈ P_of_Z p a := by
         rw [h_xaux]
         constructor
         · intro h_in_E
           have ha_inv_in : a⁻¹ ∈ E_subgroup p a :=
               (E_subgroup p a).inv_mem (mem_sup_left (mem_zpowers a))
           have h_mul := (E_subgroup p a).mul_mem ha_inv_in h_in_E
-          have h_cancel : a⁻¹ * (a * (x * u * x⁻¹)) = x * u * x⁻¹ := by group
+          have h_cancel : a⁻¹ * (a * (x * s * x⁻¹)) = x * s * x⁻¹ := by group
           rw [h_cancel] at h_mul
           let h_elem := associatedSubgroup ha
-          have h_unip : IsPUnipotent p (x * u * x⁻¹) := (IsPUnipotent.isConj p hu_unip) (by simp)
-          let z : E_subgroup p a := ⟨x * u * x⁻¹, h_mul⟩
-          have hz_unip : IsPUnipotent p z := by
+          have h_sing : IsPSingular p (x * s * x⁻¹) := (IsPSingular.isConj p hu_sing) (by simp)
+          let z : E_subgroup p a := ⟨x * s * x⁻¹, h_mul⟩
+          have hz_sing : IsPSingular p z := by
               simpa [z] using
-                (IsPUnipotent.subtype_iff
+                (IsPSingular.subtype_iff
                   (p := p)
                   (H := E_subgroup p a)
-                  (x := z)).1 h_unip
-          have hz_mem_P : z ∈ h_elem.P := by exact (mem_P_iff_pUnipotent h_elem).mpr hz_unip
+                  (x := z)).1 h_sing
+          have hz_mem_P : z ∈ h_elem.P := by exact (mem_P_iff_pSingular h_elem).mpr hz_sing
           exact mem_carrier.mp hz_mem_P
         · intro h_in_P
-          have h_P_in_E : x * u * x⁻¹ ∈ E_subgroup p a := mem_sup_right h_in_P
+          have h_P_in_E : x * s * x⁻¹ ∈ E_subgroup p a := mem_sup_right h_in_P
           have h_a_in_E : a ∈ E_subgroup p a := mem_sup_left (mem_zpowers a)
           exact (E_subgroup p a).mul_mem h_a_in_E h_P_in_E
-      by_cases hP : x * u * x⁻¹ ∈ P_of_Z p a
-      · have hE : x * (a * u) * x⁻¹ ∈ E_subgroup p a := h_E_iff.mpr hP
+      by_cases hP : x * s * x⁻¹ ∈ P_of_Z p a
+      · have hE : x * (a * s) * x⁻¹ ∈ E_subgroup p a := h_E_iff.mpr hP
         rw [dif_pos hE, if_pos h_reg_eq_a]
         simp [hxC, hP]
-      · have hnE : x * (a * u) * x⁻¹ ∉ E_subgroup p a := fun h => hP (h_E_iff.mp h)
+      · have hnE : x * (a * s) * x⁻¹ ∉ E_subgroup p a := fun h => hP (h_E_iff.mp h)
         rw [dif_neg hnE]
         simp [hP]
-    · have h_reg_ne_a : Group.pRegular p (x * (a * u) * x⁻¹) ≠ a := by
+    · have h_reg_ne_a : Group.pRegular p (x * (a * s) * x⁻¹) ≠ a := by
         intro h_eq
         rw [h_reg] at h_eq
         apply hxC
@@ -1301,7 +1298,7 @@ lemma f_a_apply_mul_pUnipotent_eq_sum
           calc x * y = x * y * x⁻¹ * x := by group
             _ = y * x := by rw [h_eq]
         exact Eq.symm h_xa
-      by_cases hE : x * (a * u) * x⁻¹ ∈ E_subgroup p a
+      by_cases hE : x * (a * s) * x⁻¹ ∈ E_subgroup p a
       · rw [dif_pos hE, if_neg h_reg_ne_a]
         simp [hxC]
       · rw [dif_neg hE]
@@ -1310,48 +1307,48 @@ lemma f_a_apply_mul_pUnipotent_eq_sum
 
 open Classical PElementary Subgroup in
 /--
-Evaluation of `f_a(a * u)` as the number of fixed cosets of `P_Z(a)` in the
+Evaluation of `f_a(a * )` as the number of fixed cosets of `P_Z(a)` in the
 centralizer of `a`.
 -/
-lemma f_a_apply_mul_pUnipotent_eq_Nfix
+lemma f_a_apply_mul_pSingular_eq_Nfix
     [CharZero k] [Fintype G]
-    {a : G} (ha : IsPRegular p a) (u : G) (hu_unip : IsPUnipotent p u) (hu_comm : Commute a u) :
-    f_a (k := k) p a (a * u) =
+    {a : G} (ha : IsPRegular p a) (s : G) (hu_sing : IsPSingular p s) (hu_comm : Commute a s) :
+    f_a (k := k) p a (a * s) =
     (Nat.card { c : ↥(centralizer ({a} : Set G)) ⧸ (P_in_Z p a : Subgroup _) //
-      (⟨u, fun y hy => by rcases hy with rfl; exact hu_comm.eq⟩ :
+      (⟨s, fun y hy => by rcases hy with rfl; exact hu_comm.eq⟩ :
         ↥(centralizer ({a} : Set G))) • c = c } : k) := by
-  rw [f_a_apply_mul_pUnipotent_eq_sum p ha u hu_unip hu_comm]
+  rw [f_a_apply_mul_pSingular_eq_sum p ha s hu_sing hu_comm]
   let Z_group := centralizer ({a} : Set G)
   let P_Z : Subgroup Z_group := P_in_Z p a
-  let u_Z : Z_group := ⟨u, fun y hy => by rcases hy with rfl; exact hu_comm.eq⟩
+  let s_Z : Z_group := ⟨s, fun y hy => by rcases hy with rfl; exact hu_comm.eq⟩
   have h_set_card :
-      (Finset.univ.filter (fun x : G => x ∈ Z_group ∧ x * u * x⁻¹ ∈ P_of_Z p a)).card =
-      Nat.card { x : G // x ∈ Z_group ∧ x * u * x⁻¹ ∈ P_of_Z p a } := by
+      (Finset.univ.filter (fun x : G => x ∈ Z_group ∧ x * s * x⁻¹ ∈ P_of_Z p a)).card =
+      Nat.card { x : G // x ∈ Z_group ∧ x * s * x⁻¹ ∈ P_of_Z p a } := by
     rw [Nat.card_eq_fintype_card]
     exact (Fintype.card_subtype _).symm
   let e_inv :
-    { x : G // x ∈ Z_group ∧ x * u * x⁻¹ ∈ P_of_Z p a } ≃
-    { x : G // x ∈ Z_group ∧ x⁻¹ * u * x ∈ P_of_Z p a } :=
+    { x : G // x ∈ Z_group ∧ x * s * x⁻¹ ∈ P_of_Z p a } ≃
+    { x : G // x ∈ Z_group ∧ x⁻¹ * s * x ∈ P_of_Z p a } :=
   { toFun := fun x => ⟨x.val⁻¹, by
       have hx := x.property
       refine ⟨Subgroup.inv_mem _ hx.1, ?_⟩
-      have : (x.val⁻¹)⁻¹ * u * x.val⁻¹ = x.val * u * x.val⁻¹ := by rw [inv_inv]
+      have : (x.val⁻¹)⁻¹ * s * x.val⁻¹ = x.val * s * x.val⁻¹ := by rw [inv_inv]
       rw [this]
       exact hx.2⟩
     invFun := fun x => ⟨x.val⁻¹, by
       have hx := x.property
       refine ⟨Subgroup.inv_mem _ hx.1, ?_⟩
-      have : x.val⁻¹ * u * (x.val⁻¹)⁻¹ = x.val⁻¹ * u * x.val := by rw [inv_inv]
+      have : x.val⁻¹ * s * (x.val⁻¹)⁻¹ = x.val⁻¹ * s * x.val := by rw [inv_inv]
       rw [this]
       exact hx.2⟩
     left_inv := fun x => Subtype.ext (inv_inv x.val)
     right_inv := fun x => Subtype.ext (inv_inv x.val) }
   have h_bij :
-    Nat.card { x : G // x ∈ Z_group ∧ x * u * x⁻¹ ∈ P_of_Z p a } =
-    Nat.card { x : G // x ∈ Z_group ∧ x⁻¹ * u * x ∈ P_of_Z p a } := Nat.card_congr e_inv
+    Nat.card { x : G // x ∈ Z_group ∧ x * s * x⁻¹ ∈ P_of_Z p a } =
+    Nat.card { x : G // x ∈ Z_group ∧ x⁻¹ * s * x ∈ P_of_Z p a } := Nat.card_congr e_inv
   let e_lift :
-    { x : G // x ∈ Z_group ∧ x⁻¹ * u * x ∈ P_of_Z p a } ≃
-    { x : Z_group // x⁻¹ * u_Z * x ∈ P_Z } :=
+    { x : G // x ∈ Z_group ∧ x⁻¹ * s * x ∈ P_of_Z p a } ≃
+    { x : Z_group // x⁻¹ * s_Z * x ∈ P_Z } :=
   { toFun := fun x =>
       let z_x : Z_group := ⟨x.val, x.property.1⟩
       ⟨z_x, by
@@ -1359,7 +1356,7 @@ lemma f_a_apply_mul_pUnipotent_eq_Nfix
         unfold P_of_Z at h_mem
         rw [Subgroup.mem_map] at h_mem
         rcases h_mem with ⟨w, hw_mem, hw_eq⟩
-        have h_eq : z_x⁻¹ * u_Z * z_x = w := by
+        have h_eq : z_x⁻¹ * s_Z * z_x = w := by
           ext
           exact hw_eq.symm
         rw [h_eq]
@@ -1369,21 +1366,21 @@ lemma f_a_apply_mul_pUnipotent_eq_Nfix
         have h_mem := z.property
         unfold P_of_Z
         rw [Subgroup.mem_map]
-        use z.val⁻¹ * u_Z * z.val
+        use z.val⁻¹ * s_Z * z.val
         exact ⟨h_mem, rfl⟩⟩
     left_inv := fun x => by ext; rfl
     right_inv := fun z => by ext; rfl }
   have h_card_lift :
-      Nat.card { x : G // x ∈ Z_group ∧ x⁻¹ * u * x ∈ P_of_Z p a } =
-      Nat.card { x : Z_group // x⁻¹ * u_Z * x ∈ P_Z } :=
+      Nat.card { x : G // x ∈ Z_group ∧ x⁻¹ * s * x ∈ P_of_Z p a } =
+      Nat.card { x : Z_group // x⁻¹ * s_Z * x ∈ P_Z } :=
     Nat.card_congr e_lift
-  have h_equiv := conjMemEquiv_fixedPointsProd P_Z u_Z
+  have h_equiv := conjMemEquiv_fixedPointsProd P_Z s_Z
   have h_card_prod :
-      Nat.card { x : Z_group // x⁻¹ * u_Z * x ∈ P_Z } =
-      Nat.card ({ c : Z_group ⧸ P_Z // u_Z • c = c } × P_Z) := Nat.card_congr h_equiv
+      Nat.card { x : Z_group // x⁻¹ * s_Z * x ∈ P_Z } =
+      Nat.card ({ c : Z_group ⧸ P_Z // s_Z • c = c } × P_Z) := Nat.card_congr h_equiv
   have h_card_final :
-      ((Finset.univ.filter (fun x : G => x ∈ Z_group ∧ x * u * x⁻¹ ∈ P_of_Z p a)).card : k) =
-      (Nat.card { c : Z_group ⧸ P_Z // u_Z • c = c } : k) * (Nat.card P_Z : k) := by
+      ((Finset.univ.filter (fun x : G => x ∈ Z_group ∧ x * s * x⁻¹ ∈ P_of_Z p a)).card : k) =
+      (Nat.card { c : Z_group ⧸ P_Z // s_Z • c = c } : k) * (Nat.card P_Z : k) := by
     rw [h_set_card, h_bij, h_card_lift, h_card_prod, Nat.card_prod, Nat.cast_mul]
   rw [h_card_final]
   have hE_card :
@@ -1398,17 +1395,17 @@ lemma f_a_apply_mul_pUnipotent_eq_Nfix
   have h_P_ne_zero : (Nat.card P_Z : k) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   rw [h_kE]
   calc ((orderOf a : k) * (Nat.card P_Z : k))⁻¹ *
-      ((Nat.card { c : Z_group ⧸ P_Z // u_Z • c = c } : k) * (Nat.card P_Z : k)) * (orderOf a : k)
+      ((Nat.card { c : Z_group ⧸ P_Z // s_Z • c = c } : k) * (Nat.card P_Z : k)) * (orderOf a : k)
   _ = (orderOf a : k)⁻¹ * (Nat.card P_Z : k)⁻¹ *
-      ((Nat.card { c : Z_group ⧸ P_Z // u_Z • c = c } : k) *
+      ((Nat.card { c : Z_group ⧸ P_Z // s_Z • c = c } : k) *
       (Nat.card P_Z : k)) * (orderOf a : k) := by rw [mul_inv]
-  _ = (Nat.card { c : Z_group ⧸ P_Z // u_Z • c = c } : k) * ((Nat.card P_Z : k)⁻¹ *
+  _ = (Nat.card { c : Z_group ⧸ P_Z // s_Z • c = c } : k) * ((Nat.card P_Z : k)⁻¹ *
         (Nat.card P_Z : k)) * ((orderOf a : k)⁻¹ * (orderOf a : k)) := by ring
-  _ = (Nat.card { c : Z_group ⧸ P_Z // u_Z • c = c } : k) * 1 * 1 :=
+  _ = (Nat.card { c : Z_group ⧸ P_Z // s_Z • c = c } : k) * 1 * 1 :=
         by rw [inv_mul_cancel₀ h_P_ne_zero, inv_mul_cancel₀ h_ord_ne_zero]
-  _ = (Nat.card { c : Z_group ⧸ P_Z // u_Z • c = c } : k) := by ring
+  _ = (Nat.card { c : Z_group ⧸ P_Z // s_Z • c = c } : k) := by ring
 
-end EvaluationAtRegularTimesUnipotent
+end EvaluationAtRegularTimesSingular
 
 section ZlocalEvaluation
 

@@ -89,7 +89,6 @@ lemma e_a_mem_Jloc
     {G : Type u} [Group G] [Fintype G] [CharZero k] [IsAlgClosed k]
     (a : G) (ha : IsPRegular p a) :
     e_a (k := k) p a ha ∈ Jloc p := by
-  -- e_a is defined via tactics, so we unfold it
   unfold e_a
   apply Submodule.smul_mem
   exact f_a_mem_Jloc p a ha
@@ -195,46 +194,46 @@ lemma E_p_apply_of_pRegular
 open PElementary Subgroup in
 /--
 The normalized function `e_a` is congruent to `1` modulo `p` on elements of
-the form `a * u`, where `u` is `p`-unipotent and commutes with `a`.
+the form `a * u`, where `u` is `p`-singular and commutes with `a`.
 
 This is the local fixed-point congruence from Bernstein's Step 8, after
 normalizing by the unit value `f_a(a)`.
 -/
-lemma e_a_congr_pUnipotent
+lemma e_a_congr_pSingular
     [CharZero k] [Fintype G]
     (p : ℕ) [Fact p.Prime]
     {a : G} (ha : IsPRegular p a)
-    (u : G) (hu : IsPUnipotent p u) (hu_comm : Commute a u) :
-    ∃ z : Zlocal p, e_a (G := G) (k := k) p a ha (a * u)
+    (s : G) (hs : IsPSingular p s) (h_comm : Commute a s) :
+    ∃ z : Zlocal p, e_a (k := k) p a ha (a * s)
               = 1 + (Zlocal.toK p z) * (p : k) := by
   -- Use the same normalizing unit as the definition of `e_a`.
-  let u0 : (Zlocal p)ˣ := e_a_unit (G := G) (k := k) (p := p) ha
+  let faa : (Zlocal p)ˣ := e_a_unit (k := k) (p := p) ha
   have hu0 :
-      Zlocal.toK (k := k) p (u0 : Zlocal p) =
-        ClassFun.f_a (G := G) (k := k) p a a := by
-    dsimp [u0]
-    exact e_a_unit_spec (G := G) (k := k) (p := p) ha
+      Zlocal.toK (k := k) p (faa : Zlocal p) =
+        ClassFun.f_a (k := k) p a a := by
+    dsimp [faa]
+    exact e_a_unit_spec p ha
 
-  have hf_fix := ClassFun.f_a_apply_mul_pUnipotent_eq_Nfix
-      (G := G) (k := k) p ha u hu hu_comm
+  have hf_fix := ClassFun.f_a_apply_mul_pSingular_eq_Nfix
+      (k := k) p ha s hs h_comm
 
   let C : Subgroup G := centralizer ({a} : Set G)
-  let H : Subgroup C := (P_in_Z (G := G) p a : Subgroup C)
-  let uC : C := ⟨u, by
-    simpa [C, Subgroup.mem_centralizer_iff] using hu_comm.eq⟩
+  let H : Subgroup C := (P_in_Z p a : Subgroup C)
+  let uC : C := ⟨s, by
+    simpa [C, Subgroup.mem_centralizer_iff] using h_comm.eq⟩
 
-  have huC : IsPUnipotent p (uC : C) := by
-    dsimp [IsPUnipotent] at hu ⊢
-    obtain ⟨n, hn⟩ := hu
+  have huC : IsPSingular p (uC : C) := by
+    dsimp [IsPSingular] at hs ⊢
+    obtain ⟨n, hn⟩ := hs
     use n
-    have h_ord : orderOf uC = orderOf u := (Subgroup.orderOf_coe uC).symm
+    have h_ord : orderOf uC = orderOf s := (Subgroup.orderOf_coe uC).symm
     rw [h_ord]
     exact hn
 
   have hmodEq :
       Nat.card { c : C ⧸ H // uC • c = c } ≡
         Nat.card (C ⧸ H) [MOD p] := by
-    exact card_fixedPoints_pUnipotent_modEq H (uC : C) huC
+    exact card_fixedPoints_pSingular_modEq H (uC : C) huC
 
   have hdvd :
       (p : ℤ) ∣
@@ -246,7 +245,7 @@ lemma e_a_congr_pUnipotent
   -- `t` measures the difference between the quotient cardinality and the
   -- fixed-point cardinality.
   obtain ⟨t, ht⟩ := hdvd
-  let z : Zlocal p := -↑(u0⁻¹) * (t : Zlocal p)
+  let z : Zlocal p := -↑(faa⁻¹) * (t : Zlocal p)
   use z
   unfold e_a
   rw [ClassFun.Zlocal.smul_apply, hf_fix]
@@ -267,9 +266,9 @@ lemma e_a_congr_pUnipotent
   letI : Fintype (P_of_Z p a) := Fintype.ofFinite (P_of_Z p a)
 
   have h_u0_val :
-      Zlocal.toK (k := k) p (u0 : Zlocal p) =
+      Zlocal.toK (k := k) p (faa : Zlocal p) =
         (Nat.card (C ⧸ H) : k) := by
-    rw [hu0, ClassFun.f_a_apply_a_eq_bernsteinIndex (G := G) (k := k) p ha]
+    rw [hu0, ClassFun.f_a_apply_a_eq_bernsteinIndex (k := k) p ha]
     unfold ClassFun.bernsteinIndex
     rw [Subgroup.card_eq_card_quotient_mul_card_subgroup H]
     simp only [Nat.card_eq_fintype_card, Nat.cast_inj]
@@ -286,8 +285,8 @@ lemma e_a_congr_pUnipotent
   rw [mul_sub]
 
   have h_inv_mul :
-      ((Zlocal.toK (k := k) p) ↑u0)⁻¹ *
-          (Zlocal.toK (k := k) p) ↑u0 = 1 := by
+      ((Zlocal.toK (k := k) p) ↑faa)⁻¹ *
+          (Zlocal.toK (k := k) p) ↑faa = 1 := by
     rw [← map_units_inv, ← map_mul, Units.inv_mul, map_one]
 
   rw [h_inv_mul]
@@ -302,54 +301,54 @@ lemma e_a_congr_pRegularPart
     [Fintype G] [CharZero k]
     (p : ℕ) [Fact p.Prime]
     (a : G) (ha : IsPRegular p a) (g : G) :
-    let s := Group.pRegular p g
+    let r := Group.pRegular p g
     ∃ z : Zlocal p,
       e_a (k := k) p a ha g =
-      e_a p a ha s + (Zlocal.toK p z) * (p : k) := by
-  intro s
-  let u := Group.pUnipotent p g
+      e_a p a ha r + (Zlocal.toK p z) * (p : k) := by
+  intro r
+  let s := Group.pSingular p g
   let hfg := isOfFinOrder_of_finite g
-  have h_decomp : g = s * u := by exact Eq.symm (Group.pDecomp' p hfg)
-  have hu : IsPUnipotent p u := Group.isPUnipotent_pUnipotent p g
-  have h_comm : Commute s u := Group.pRegular_pUnipotent_commute p rfl
-  by_cases h_conj : IsConj a s
+  have h_decomp : g = r * s := by exact Eq.symm (Group.pDecomp' p hfg)
+  have hs : IsPSingular p s := Group.isPSingular_pSingular p g
+  have h_comm : Commute r s := Group.pRegular_pSingular_commute p rfl
+  by_cases h_conj : IsConj a r
   · obtain ⟨x, hx⟩ := isConj_iff.mp h_conj
-    let u' := x⁻¹ * u * x
-    have hu' : IsPUnipotent p u' := by
-      dsimp [u']
-      exact IsPUnipotent.conj' p hu x
-    have hu'_comm : Commute a u' := by
-      have ha_eq : a = x⁻¹ * s * x := by
+    let s' := x⁻¹ * s * x
+    have hs' : IsPSingular p s' := by
+      dsimp [s']
+      exact IsPSingular.conj' p hs x
+    have hu'_comm : Commute a s' := by
+      have ha_eq : a = x⁻¹ * r * x := by
         calc a = x⁻¹ * (x * a * x⁻¹) * x := by group
-             _ = x⁻¹ * s * x := by rw [hx]
+             _ = x⁻¹ * r * x := by rw [hx]
       rw [ha_eq]
-      dsimp [u']
-      calc (x⁻¹ * s * x) * (x⁻¹ * u * x)
-        _ = x⁻¹ * (s * u) * x := by group
-        _ = x⁻¹ * (u * s) * x := by rw [h_comm.eq]
-        _ = (x⁻¹ * u * x) * (x⁻¹ * s * x) := by group
-    obtain ⟨z_local, hz_local⟩ := e_a_congr_pUnipotent (k:=k) p ha u' hu' hu'_comm
+      dsimp [s']
+      calc (x⁻¹ * r * x) * (x⁻¹ * s * x)
+        _ = x⁻¹ * (r * s) * x := by group
+        _ = x⁻¹ * (s * r) * x := by rw [h_comm.eq]
+        _ = (x⁻¹ * s * x) * (x⁻¹ * r * x) := by group
+    obtain ⟨z_local, hz_local⟩ := e_a_congr_pSingular (k:=k) p ha s' hs' hu'_comm
     use z_local
-    have h_conj_g : IsConj g (a * u') := by
+    have h_conj_g : IsConj g (a * s') := by
       rw [isConj_iff]
       use x⁻¹
       simp only [inv_inv]
       rw [h_decomp, mul_assoc]
       group
       rw [← hx]
-      dsimp [u']
+      dsimp [s']
       group
-    have h_conj_s : IsConj s a := by
+    have h_conj_s : IsConj r a := by
       rw[isConj_iff]
       use x⁻¹
       simp only [inv_inv]
       simp [← hx, mul_assoc]
     have h_eval_g :
         e_a (k := k) p a ha g =
-          e_a p a ha (a * u') :=
+          e_a p a ha (a * s') :=
       ClassFun.apply_eq_apply_of_isConj h_conj_g
     have h_eval_s :
-        e_a (k := k) p a ha s =
+        e_a (k := k) p a ha r =
           e_a p a ha a :=
       ClassFun.apply_eq_apply_of_isConj h_conj_s
     rw [h_eval_g, h_eval_s]
@@ -362,12 +361,12 @@ lemma e_a_congr_pRegularPart
       intro h_contra
       apply h_conj
       symm
-      have h_s: IsPRegular p s := Group.isPRegular_pRegular p hfg
-      have h_idem : Group.pRegular p s = s :=
-        Group.pRegular_eq_self_of_isPRegular p (isOfFinOrder_of_finite s) h_s
+      have h_s: IsPRegular p r := Group.isPRegular_pRegular p hfg
+      have h_idem : Group.pRegular p r = r :=
+        Group.pRegular_eq_self_of_isPRegular p (isOfFinOrder_of_finite r) h_s
       rw [h_idem] at h_contra
       exact h_contra
-    · dsimp [s] at h_conj
+    · dsimp [r] at h_conj
       exact Not.imp h_conj fun b ↦ id (IsConj.symm b)
 
 /--
@@ -463,7 +462,7 @@ whose image in `k` is exactly `E_p(g)`.
 noncomputable def E_p_val
     [Fintype G] [CharZero k]
     (p : ℕ) [Fact p.Prime] : G → Zlocal p :=
-  fun g => 1 + (Classical.choose (E_p_congr (G:=G) (k:=k) p g)) * (p : Zlocal p)
+  fun g => 1 + (Classical.choose (E_p_congr (k:=k) p g)) * (p : Zlocal p)
 
 /--
 The value of `E_p` is the image of its chosen `p`-local lift `E_p_val`.
@@ -471,10 +470,10 @@ The value of `E_p` is the image of its chosen `p`-local lift `E_p_val`.
 lemma E_p_apply_eq_toK_E_p_val
     [Fintype G] [CharZero k]
     (p : ℕ) [Fact p.Prime] (g : G) :
-    E_p (k:=k) p g = Zlocal.toK p (E_p_val (G:=G) (k:=k) p g) := by
+    E_p (k:=k) p g = Zlocal.toK p (E_p_val (k:=k) p g) := by
   unfold E_p_val
   simp only [map_add, map_one, map_mul, map_natCast]
-  have h_congr := Classical.choose_spec (E_p_congr (G:=G) (k:=k) p g)
+  have h_congr := Classical.choose_spec (E_p_congr (k:=k) p g)
   exact h_congr
 
 /--
@@ -514,7 +513,7 @@ combination of positive powers of `E_p`.
 noncomputable def E_p_poly
     [Fintype G] [CharZero k]
     (p : ℕ) [Fact p.Prime] : Polynomial (Zlocal p) :=
-  ∏ g : G, (X - C (E_p_val (G:=G) (k:=k) p g))
+  ∏ g : G, (X - C (E_p_val (k:=k) p g))
 
 /--
 The polynomial `E_p_poly` vanishes at each of the values `E_p_val g`.
@@ -522,7 +521,7 @@ The polynomial `E_p_poly` vanishes at each of the values `E_p_val g`.
 lemma E_p_poly_eval_zero
     [Fintype G] [CharZero k]
     (p : ℕ) [Fact p.Prime] (g : G) :
-    (E_p_poly (G:=G) (k:=k) p).eval (E_p_val (G:=G) (k:=k) p g) = 0 := by
+    (E_p_poly (G := G) (k:=k) p).eval (E_p_val (k:=k) p g) = 0 := by
   unfold E_p_poly
   rw [eval_prod]
   apply Finset.prod_eq_zero (Finset.mem_univ g)
@@ -536,10 +535,10 @@ This follows from the congruence shape `E_p_val g = 1 + pz`.
 lemma E_p_val_isUnit
     [Fintype G] [CharZero k]
     (p : ℕ) [Fact p.Prime] (g : G) :
-    IsUnit (E_p_val (G:=G) (k:=k) p g) := by
+    IsUnit (E_p_val (k:=k) p g) := by
   unfold E_p_val
-  have h_comm : 1 + (Classical.choose (E_p_congr (G:=G) (k:=k) p g)) * (p : Zlocal p) =
-                1 + (p : Zlocal p) * (Classical.choose (E_p_congr (G:=G) (k:=k) p g)) := by
+  have h_comm : 1 + (Classical.choose (E_p_congr (k:=k) p g)) * (p : Zlocal p) =
+                1 + (p : Zlocal p) * (Classical.choose (E_p_congr (k:=k) p g)) := by
     rw [mul_comm (Classical.choose _) (p : Zlocal p)]
   rw [h_comm]
   exact Zlocal.isUnit_one_add_p_mul _
@@ -595,7 +594,7 @@ lemma E_p_poly_coeff_zero_ne_zero
     (p : ℕ) [Fact p.Prime] :
     (E_p_poly (G := G) (k := k) p).coeff 0 ≠ 0 := by
   haveI : Nontrivial (Zlocal p) := Zlocal.nontrivial (k:=k) p
-  exact IsUnit.ne_zero (E_p_poly_coeff_zero_isUnit (G := G) (k := k) p)
+  exact IsUnit.ne_zero (E_p_poly_coeff_zero_isUnit (k := k) p)
 
 /--
 Bernstein's local conclusion: the constant class function `1` belongs to the
@@ -630,7 +629,7 @@ lemma one_mem_Jloc
     change ∑ i ∈ P.support, P.coeff i * E_p_val p g ^ i = 0 at h_eval
     have h_mem_zero : 0 ∈ P.support := by
       apply Polynomial.mem_support_iff.mpr
-      exact E_p_poly_coeff_zero_ne_zero (G := G) (k := k) p
+      exact E_p_poly_coeff_zero_ne_zero (k := k) p
     rw [← Finset.insert_erase h_mem_zero] at h_eval
     rw [Finset.sum_insert (Finset.notMem_erase 0 _)] at h_eval
     simp only [pow_zero, mul_one] at h_eval

@@ -30,7 +30,7 @@ lake build
 
 This repository includes a `leanprover/comparator` harness.
 
-* `Challenge.lean` gives a compact Mathlib-based statement of Brauer induction.
+* `Challenge.lean` gives a concise Mathlib-based statement of Brauer induction.
 * `Solution.lean` proves that statement from the main theorem in this project.
 * `comparator.json` permits only `propext`, `Classical.choice`, and `Quot.sound`.
  

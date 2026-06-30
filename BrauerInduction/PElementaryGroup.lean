@@ -27,9 +27,9 @@ namespace BrauerInduction
 A group `G` is `p`-elementary if it is the product of a cyclic `p`-regular
 subgroup `C` and a `p`-group `P`, with `C` centralizing `P`.
 
-The structure is data-bearing: it records chosen subgroups `C` and `P`.
-The corresponding proposition is usually expressed as
-`Nonempty (PElementary p G)`, or equivalently `IsPElementary p G`.
+The structure is data-bearing: it records chosen subgroups `C` and `P`. The
+corresponding proposition is expressed as `Nonempty (PElementary p G)`, or
+equivalently `IsPElementary p G`.
 -/
 structure PElementary (p : ℕ) (G : Type u) [Group G] where
   protected C : Subgroup G
@@ -48,36 +48,36 @@ namespace PElementary
 
 variable {p : ℕ} {G : Type u} [Group G] {g : G}
 
-lemma isPUnipotent_of_mem_P [Fact p.Prime]
+lemma isPSingular_of_mem_P [Fact p.Prime]
     (e : PElementary p G) {g : G} (hg : g ∈ e.P) :
-    IsPUnipotent p g := by
+    IsPSingular p g := by
   rcases (IsPGroup.iff_orderOf).1 e.P_isPGroup ⟨g, hg⟩ with ⟨k, hk⟩
   exact ⟨k, by simpa [Subgroup.orderOf_coe] using hk⟩
 
 /--
-In a `p`-elementary group `G = C * P`, an element of `G` is `p`-unipotent
+In a `p`-elementary group `G = C * P`, an element of `G` is `p`-singular
 iff it lies in the `p`-subgroup part `P`.
 -/
-lemma mem_P_iff_pUnipotent [Fact p.Prime]
+lemma mem_P_iff_pSingular [Fact p.Prime]
     (e : PElementary p G) {g : G} :
-    g ∈ e.P ↔ IsPUnipotent p g := by
+    g ∈ e.P ↔ IsPSingular p g := by
   constructor
   · intro hg
-    exact e.isPUnipotent_of_mem_P hg
+    exact e.isPSingular_of_mem_P hg
   · intro hgu
     rcases e.decompose g with ⟨c, cC, q, qP, hg_eq⟩
     have hcr : IsPRegular p c := e.C_isPRegular cC
-    have hqu : IsPUnipotent p q := e.isPUnipotent_of_mem_P qP
+    have hqs  : IsPSingular p q := e.isPSingular_of_mem_P qP
     have hf : IsOfFinOrder (c * q) := by
       rw [hg_eq]
       exact hgu.isOfFinOrder
     have hcomm : q * c = c * q := by
       rw [e.comm cC qP]
     obtain ⟨hq_eq, hc_eq⟩ :=
-      Group.pUnipotent_pRegular_unique p hf hcomm rfl hqu hcr
+      Group.pSingular_pRegular_unique p hf hcomm rfl hqs  hcr
     have hc1 : c = 1 := by
       rw [hc_eq]
-      exact Group.isPUnipotent_pRegular_eq_one p hf (by simpa [hg_eq] using hgu)
+      exact Group.isPSingular_pRegular_eq_one p hf (by simpa [hg_eq] using hgu)
     rw [← hg_eq, hc1, one_mul]
     exact qP
 
@@ -93,7 +93,7 @@ lemma mem_C_iff_pRegular [Fact p.Prime]
     exact e.C_isPRegular hg
   · intro hgr
     rcases e.decompose g with ⟨c, cC, q, qP, hg_eq⟩
-    have hpu : IsPUnipotent p q := e.isPUnipotent_of_mem_P qP
+    have hps  : IsPSingular p q := e.isPSingular_of_mem_P qP
     have hpr : IsPRegular p c := e.C_isPRegular cC
     have hf : IsOfFinOrder (c * q) := by
       rw [hg_eq]
@@ -101,10 +101,10 @@ lemma mem_C_iff_pRegular [Fact p.Prime]
     have hcomm : q * c = c * q := by
       rw [e.comm cC qP]
     obtain ⟨hq_eq, hc_eq⟩ :=
-      Group.pUnipotent_pRegular_unique p hf hcomm rfl hpu hpr
+      Group.pSingular_pRegular_unique p hf hcomm rfl hps  hpr
     have hq1 : q = 1 := by
       rw [hq_eq]
-      exact Group.isPRegular_pUnipotent_eq_one p hf (by simpa [hg_eq] using hgr)
+      exact Group.isPRegular_pSingular_eq_one p hf (by simpa [hg_eq] using hgr)
     rw [← hg_eq, hq1, mul_one]
     exact cC
 
@@ -140,7 +140,7 @@ lemma isOfFinOrder [Fact p.Prime]
   exact Commute.isOfFinOrder_mul
     (e.comm hc hq)
     (IsPRegular.isOfFinOrder p (e.C_isPRegular hc))
-    (IsPUnipotent.isOfFinOrder p (e.isPUnipotent_of_mem_P hq))
+    (IsPSingular.isOfFinOrder p (e.isPSingular_of_mem_P hq))
 
 /--
 The order of the cyclic factor of a `p`-elementary group is coprime to `p`.
@@ -176,9 +176,9 @@ lemma inf_C_P_eq_bot [Fact p.Prime]
   simp only [Subgroup.mem_inf, Subgroup.mem_bot]
   constructor
   · rintro ⟨hx_C, hx_P⟩
-    have hu : IsPUnipotent p x := (e.mem_P_iff_pUnipotent).mp hx_P
+    have hs  : IsPSingular p x := (e.mem_P_iff_pSingular).mp hx_P
     have hr : IsPRegular p x := (e.mem_C_iff_pRegular).mp hx_C
-    exact IsPUnipotent.isPRegular_eq_one p x hu hr
+    exact IsPSingular.isPRegular_eq_one p x hs  hr
   · rintro rfl
     exact ⟨Subgroup.one_mem _, Subgroup.one_mem _⟩
 
@@ -439,10 +439,10 @@ def ofSubgroup [Fact p.Prime]
     rcases e.decompose (k : G) with ⟨c, hc, q, hq, hk_eq⟩
     have hk_fin : IsOfFinOrder (k : G) := e.isOfFinOrder (k : G)
     obtain ⟨hq_eq, hc_eq⟩ :=
-      Group.pUnipotent_pRegular_unique p hk_fin
+      Group.pSingular_pRegular_unique p hk_fin
         (by rw [← hk_eq, (e.comm hc hq).eq])
         hk_eq
-        (e.isPUnipotent_of_mem_P hq)
+        (e.isPSingular_of_mem_P hq)
         (e.C_isPRegular hc)
     refine
       ⟨⟨c, hc_eq ▸ Subgroup.zpow_mem K k.property _⟩, hc,
@@ -487,89 +487,89 @@ abbrev mapEquiv {G : Type u} {G' : Type v} [Group G] [Group G']
     PElementary p G' := PElementary.ofMulEquiv eG φ
 
 /--
-In the `p`-elementary subgroup associated to a `p`-regular element `s`, the
-elements whose `p`-regular part is `s` are exactly the elements of the coset
-`s * P_of_Z p s`.
+In the `p`-elementary subgroup associated to a `p`-regular element `r`, the
+elements whose `p`-regular part is `r` are exactly the elements of the coset
+`r * P_of_Z p r`.
 -/
 lemma mem_associatedSubgroup_fiber [Fact p.Prime]
-    {s : G} (hs : IsPRegular p s)
-    (h : ↥(Subgroup.zpowers s ⊔ P_of_Z p s)) :
-    Group.pRegular p (h : G) = s ↔ ∃ u ∈ P_of_Z p s, (h : G) = s * u := by
-  let H := Subgroup.zpowers s ⊔ P_of_Z p s
-  let eH := associatedSubgroup (p := p) hs
+    {r : G} (hr : IsPRegular p r)
+    (h : ↥(Subgroup.zpowers r ⊔ P_of_Z p r)) :
+    Group.pRegular p (h : G) = r ↔ ∃ s ∈ P_of_Z p r, (h : G) = r * s := by
+  let H := Subgroup.zpowers r ⊔ P_of_Z p r
+  let eH := associatedSubgroup (p := p) hr
   have hf : IsOfFinOrder (h : G) := by
     have hfH : IsOfFinOrder h := eH.isOfFinOrder h
     exact (Submonoid.isOfFinOrder_coe (x := h)).2 hfH
   constructor
   · intro h_reg_is_s
-    let u := Group.pUnipotent p (h : G)
-    have h_decomp : (h : G) = s * u := by
+    let s := Group.pSingular p (h : G)
+    have h_decomp : (h : G) = r * s := by
       simp only [← h_reg_is_s]
       rw [Group.pDecomp' p hf]
-    use u
+    use s
     constructor
-    · have u_in_H : u ∈ H := by
+    · have s_in_H : s ∈ H := by
         rw [eq_inv_mul_iff_mul_eq.mpr h_decomp.symm]
         apply Subgroup.mul_mem
         · apply Subgroup.inv_mem
           apply Subgroup.mem_sup_left
           simp only [Subgroup.mem_zpowers]
         · exact h.property
-      have huH : (⟨u, u_in_H⟩ : H) ∈ eH.P := by
-        rw [eH.mem_P_iff_pUnipotent]
+      have hsH : (⟨s, s_in_H⟩ : H) ∈ eH.P := by
+        rw [eH.mem_P_iff_pSingular]
         exact
-          (IsPUnipotent.subtype_iff p (x := ⟨u, u_in_H⟩)).1
-              (Group.isPUnipotent_pUnipotent p (h : G))
-      exact huH
+          (IsPSingular.subtype_iff p (x := ⟨s, s_in_H⟩)).1
+              (Group.isPSingular_pSingular p (h : G))
+      exact hsH
     · exact h_decomp
-  · rintro ⟨u, hu, h_eq⟩
+  · rintro ⟨s, hs, h_eq⟩
     rw [h_eq]
-    have hsu_fin : IsOfFinOrder (s * u) := by
+    have hsr_fin : IsOfFinOrder (r * s) := by
       simpa [← h_eq] using hf
-    apply Group.pRegular_mul_eq_self_of_pUnipotent_commute p hsu_fin
-    · exact hs
-    · have u_in_H : u ∈ H := Subgroup.mem_sup_right hu
-      have huH : (⟨u, u_in_H⟩ : H) ∈ eH.P := hu
-      have : IsPUnipotent p (⟨u, u_in_H⟩ : H) := (eH.mem_P_iff_pUnipotent).mp huH
-      exact (IsPUnipotent.subtype_iff p (x := ⟨u, u_in_H⟩)).2 this
-    · have h_comm := P_of_Z_le_Z (p := p) s hu
+    apply Group.pRegular_mul_eq_self_of_pSingular_commute p hsr_fin
+    · exact hr
+    · have s_in_H : s ∈ H := Subgroup.mem_sup_right hs
+      have huH : (⟨s, s_in_H⟩ : H) ∈ eH.P := hs
+      have : IsPSingular p (⟨s, s_in_H⟩ : H) := (eH.mem_P_iff_pSingular).mp huH
+      exact (IsPSingular.subtype_iff p (x := ⟨s, s_in_H⟩)).2 this
+    · have h_comm := P_of_Z_le_Z (p := p) r hs
       simp only [Subgroup.mem_centralizer_iff, Set.mem_singleton_iff] at h_comm
-      exact (commute_iff_eq s u).mpr (h_comm s rfl)
+      exact (commute_iff_eq r s).mpr (h_comm r rfl)
 
 /--
-If a `p`-unipotent element acts on `G ⧸ H`, then the number of fixed cosets
+If a `p`-singular element acts on `G ⧸ H`, then the number of fixed cosets
 is congruent modulo `p` to the total number of cosets.
 -/
-lemma card_fixedPoints_pUnipotent_modEq
+lemma card_fixedPoints_pSingular_modEq
     [hp : Fact p.Prime]
-    (H : Subgroup G) [H.FiniteIndex] (u : G) (hu : IsPUnipotent p u) :
-    Nat.card { c : G ⧸ H // u • c = c } ≡ Nat.card (G ⧸ H) [MOD p] := by
-  let U := Subgroup.zpowers u
-  have hU_pgroup : IsPGroup p U := by
+    (H : Subgroup G) [H.FiniteIndex] (s : G) (hs : IsPSingular p s) :
+    Nat.card { c : G ⧸ H // s • c = c } ≡ Nat.card (G ⧸ H) [MOD p] := by
+  let zs := Subgroup.zpowers s
+  have hU_pgroup : IsPGroup p zs := by
     intro ⟨g, hg⟩
-    rcases hu with ⟨k, hk⟩
+    rcases hs with ⟨k, hk⟩
     use k
     obtain ⟨n, rfl⟩ := Subgroup.mem_zpowers_iff.mp hg
     ext
     simp only [Subgroup.coe_pow, Subgroup.coe_one]
     rw [← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul, zpow_natCast]
-    have hu_one : u ^ (p ^ k) = 1 := by rw [← hk, pow_orderOf_eq_one]
-    rw [hu_one, one_zpow]
+    have hs_one : s ^ (p ^ k) = 1 := by rw [← hk, pow_orderOf_eq_one]
+    rw [hs_one, one_zpow]
 
-  have h_fix_eq : Nat.card { c : G ⧸ H // u • c = c } =
-                  Nat.card (MulAction.fixedPoints U (G ⧸ H)) := by
+  have h_fix_eq : Nat.card { c : G ⧸ H // s • c = c } =
+                  Nat.card (MulAction.fixedPoints zs (G ⧸ H)) := by
     apply Nat.card_congr
     refine { toFun := fun ⟨c, hc⟩ => ⟨c, ?_⟩,
              invFun := fun ⟨c, hc⟩ => ⟨c, ?_⟩,
              left_inv := fun _ => by ext; rfl,
              right_inv := fun _ => by ext; rfl }
     · intro ⟨g, hg⟩
-      let Stab : Subgroup G := MulAction.stabilizer G c
-      have hu_stab : u ∈ Stab := by change u • c = c;  simpa using hc
+      let cStab : Subgroup G := MulAction.stabilizer G c
+      have hs_cStab : s ∈ cStab := by change s • c = c;  simpa using hc
       rcases (Subgroup.mem_zpowers_iff.mp hg) with ⟨n, rfl⟩
-      have : (u ^ n) ∈ Stab := by exact Stab.zpow_mem hu_stab n
+      have : (s ^ n) ∈ cStab := by exact cStab.zpow_mem hs_cStab n
       exact MulAction.mem_stabilizer_iff.mp this
-    · exact hc ⟨u, Subgroup.mem_zpowers u⟩
+    · exact hc ⟨s, Subgroup.mem_zpowers s⟩
 
   rw [h_fix_eq]
   exact (hU_pgroup.card_modEq_card_fixedPoints (G ⧸ H)).symm
@@ -643,41 +643,39 @@ lemma ofIsPGroup
 /--
 A finite cyclic group is `p`-elementary.
 
-The cyclic generator decomposes into its `p`-regular and `p`-unipotent parts.
+The cyclic generator decomposes into its `p`-regular and `p`-singular parts.
 -/
 lemma of_isCyclic [Finite G] [h_cyc : IsCyclic G]
     [Fact p.Prime] : IsPElementary p G := by
   refine ⟨?_⟩
   let x := Classical.choose (IsCyclic.exists_generator (α := G))
   have hx_gen := Classical.choose_spec (IsCyclic.exists_generator (α := G))
-
   have hfx : IsOfFinOrder x := isOfFinOrder_of_finite x
-
   let x_reg  := Group.pRegular p x
-  let x_unip := Group.pUnipotent p x
+  let x_sing := Group.pSingular p x
   exact {
     C := Subgroup.zpowers x_reg
-    P := Subgroup.zpowers x_unip
+    P := Subgroup.zpowers x_sing
     C_isCyclic := Subgroup.isCyclic_zpowers x_reg
     P_isPGroup := by
-      rw [← IsPUnipotent.iff_zpowers_isPGroup]
-      exact Group.isPUnipotent_pUnipotent p x
+      rw [← IsPSingular.iff_zpowers_isPGroup]
+      exact Group.isPSingular_pSingular p x
     C_isPRegular := by
       intro c hc
       have h_dvd : orderOf c ∣ orderOf x_reg := orderOf_dvd_of_mem_zpowers hc
       have h_reg_gen : IsPRegular p x_reg := Group.isPRegular_pRegular p hfx
       exact Nat.Coprime.coprime_dvd_left h_dvd h_reg_gen
     comm := by
-      intro c u hc hu
+      intro c s hc hs
       obtain ⟨n, rfl⟩ := Subgroup.mem_zpowers_iff.mp hc
-      obtain ⟨m, rfl⟩ := Subgroup.mem_zpowers_iff.mp hu
+      obtain ⟨m, rfl⟩ := Subgroup.mem_zpowers_iff.mp hs
       apply Commute.zpow_zpow
-      exact Group.pRegular_pUnipotent_commute p rfl
+      exact Group.pRegular_pSingular_commute p rfl
     decompose := by
       intro h
       obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp (hx_gen h)
       use x_reg ^ k, Subgroup.zpow_mem _ (Subgroup.mem_zpowers x_reg) k
-      use x_unip ^ k, Subgroup.zpow_mem _ (Subgroup.mem_zpowers x_unip) k
+      use x_sing ^ k, Subgroup.zpow_mem _ (Subgroup.mem_zpowers x_sing) k
       rw [← Commute.mul_zpow (Group.pDecomp_commute p x).symm]
       rw [Group.pDecomp' p hfx]
       exact hk
