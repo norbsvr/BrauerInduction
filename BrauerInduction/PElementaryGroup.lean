@@ -529,8 +529,8 @@ lemma mem_associatedSubgroup_fiber [Fact p.Prime]
     apply Group.pRegular_mul_eq_self_of_pSingular_commute p hsr_fin
     · exact hr
     · have s_in_H : s ∈ H := Subgroup.mem_sup_right hs
-      have huH : (⟨s, s_in_H⟩ : H) ∈ eH.P := hs
-      have : IsPSingular p (⟨s, s_in_H⟩ : H) := (eH.mem_P_iff_pSingular).mp huH
+      have hsH : (⟨s, s_in_H⟩ : H) ∈ eH.P := hs
+      have : IsPSingular p (⟨s, s_in_H⟩ : H) := (eH.mem_P_iff_pSingular).mp hsH
       exact (IsPSingular.subtype_iff p (x := ⟨s, s_in_H⟩)).2 this
     · have h_comm := P_of_Z_le_Z (p := p) r hs
       simp only [Subgroup.mem_centralizer_iff, Set.mem_singleton_iff] at h_comm
@@ -545,7 +545,7 @@ lemma card_fixedPoints_pSingular_modEq
     (H : Subgroup G) [H.FiniteIndex] (s : G) (hs : IsPSingular p s) :
     Nat.card { c : G ⧸ H // s • c = c } ≡ Nat.card (G ⧸ H) [MOD p] := by
   let zs := Subgroup.zpowers s
-  have hU_pgroup : IsPGroup p zs := by
+  have h_pgroup : IsPGroup p zs := by
     intro ⟨g, hg⟩
     rcases hs with ⟨k, hk⟩
     use k
@@ -572,7 +572,7 @@ lemma card_fixedPoints_pSingular_modEq
     · exact hc ⟨s, Subgroup.mem_zpowers s⟩
 
   rw [h_fix_eq]
-  exact (hU_pgroup.card_modEq_card_fixedPoints (G ⧸ H)).symm
+  exact (h_pgroup.card_modEq_card_fixedPoints (G ⧸ H)).symm
 
 end PElementary
 

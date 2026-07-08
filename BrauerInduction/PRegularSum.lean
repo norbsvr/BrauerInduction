@@ -55,7 +55,7 @@ noncomputable def e_a_unit
     [Fintype G] [CharZero k]
     {a : G} (ha : IsPRegular p a) : (Zlocal p)ˣ :=
   Classical.choose
-    (ClassFun.f_a_apply_a_isUnit_Zlocal (k := k) p (a := a) ha)
+    (ClassFun.Bernstein.f_apply_a_isUnit_Zlocal (k := k) p (a := a) ha)
 
 /--
 The chosen unit `e_a_unit` maps to the value `f_a(a)` under the canonical map
@@ -66,9 +66,9 @@ lemma e_a_unit_spec
     {a : G} (ha : IsPRegular p a) :
     Zlocal.toK (k := k) p (e_a_unit (k := k) p ha : Zlocal p)
       =
-    ClassFun.f_a (k := k) p a a :=
+    ClassFun.Bernstein.f (k := k) p a a :=
   Classical.choose_spec
-    (ClassFun.f_a_apply_a_isUnit_Zlocal (k := k) p  ha)
+    (ClassFun.Bernstein.f_apply_a_isUnit_Zlocal (k := k) p  ha)
 
 /--
 The normalized Bernstein function attached to a `p`-regular element `a`.
@@ -80,7 +80,7 @@ noncomputable def e_a
     [Fintype G] [CharZero k]
     (a : G) (ha : IsPRegular p a) : ClassFun k G :=
   ((↑((e_a_unit (k := k) p ha)⁻¹) : Zlocal p) •
-    ClassFun.f_a (k := k) p a)
+     ClassFun.Bernstein.f (k := k) p a)
 
 /--
 The normalized function `e_a` belongs to the localized Bernstein span `Jloc p`.
@@ -116,7 +116,7 @@ lemma e_a_apply_not_isConj
     (ha : IsPRegular p a) (hx : ¬ IsConj (Group.pRegular p x) a) :
     (e_a (k := k) p a ha) x = (0 : k) := by
   simp only [e_a, ClassFun.smul_apply, Units.isUnit, IsUnit.smul_eq_zero]
-  exact ClassFun.f_a_apply_eq_zero_of_not_isConj p a x hx
+  exact ClassFun.Bernstein.f_apply_eq_zero_of_not_isConj p a x hx
 
 /--
 The Bernstein class sum `E_p`.
@@ -170,7 +170,7 @@ lemma E_p_apply_of_pRegular
   [Fintype G] [CharZero k]
   (g : G) (hg : IsPRegular p g) :
   E_p (k := k) p g = 1 := by
-  rcases PRegularClass.unique_of_isPRegular p g hg with ⟨C0, hC0, huniq⟩
+  rcases PRegularClass.unique_of_isPRegular p g hg with ⟨C0, hC0, h_unique⟩
   simp only [E_p, ClassFun.sum_apply]
   classical
   have h_sum :
@@ -186,7 +186,7 @@ lemma E_p_apply_of_pRegular
   · intro i _ hi_neq
     have h_not_conj : ¬ IsConj i.repr g := by
       intro h_conj
-      exact hi_neq (huniq i h_conj)
+      exact hi_neq (h_unique i h_conj)
     rw [if_neg h_not_conj]
   · intro h_not_mem
     exact (h_not_mem (Finset.mem_univ C0)).elim
@@ -194,7 +194,7 @@ lemma E_p_apply_of_pRegular
 open PElementary Subgroup in
 /--
 The normalized function `e_a` is congruent to `1` modulo `p` on elements of
-the form `a * u`, where `u` is `p`-singular and commutes with `a`.
+the form `a * s`, where `s` is `p`-singular and commutes with `a`.
 
 This is the local fixed-point congruence from Bernstein's Step 8, after
 normalizing by the unit value `f_a(a)`.
@@ -207,54 +207,53 @@ lemma e_a_congr_pSingular
     ∃ z : Zlocal p, e_a (k := k) p a ha (a * s)
               = 1 + (Zlocal.toK p z) * (p : k) := by
   -- Use the same normalizing unit as the definition of `e_a`.
-  let faa : (Zlocal p)ˣ := e_a_unit (k := k) (p := p) ha
-  have hu0 :
-      Zlocal.toK (k := k) p (faa : Zlocal p) =
-        ClassFun.f_a (k := k) p a a := by
-    dsimp [faa]
+  let fa_unit : (Zlocal p)ˣ := e_a_unit (k := k) (p := p) ha
+  have h_fa_unit_toK :
+      Zlocal.toK p (fa_unit : Zlocal p) =
+        ClassFun.Bernstein.f (k := k) p a a := by
+    dsimp [fa_unit]
     exact e_a_unit_spec p ha
 
-  have hf_fix := ClassFun.f_a_apply_mul_pSingular_eq_Nfix
+  have hf_fix := ClassFun.Bernstein.f_apply_mul_pSingular_eq_card_fixedCosets
       (k := k) p ha s hs h_comm
 
   let C : Subgroup G := centralizer ({a} : Set G)
   let H : Subgroup C := (P_in_Z p a : Subgroup C)
-  let uC : C := ⟨s, by
-    simpa [C, Subgroup.mem_centralizer_iff] using h_comm.eq⟩
+  let sC : C := ⟨s, by simpa [C, Subgroup.mem_centralizer_iff] using h_comm.eq⟩
 
-  have huC : IsPSingular p (uC : C) := by
+  have hsC : IsPSingular p sC := by
     dsimp [IsPSingular] at hs ⊢
     obtain ⟨n, hn⟩ := hs
     use n
-    have h_ord : orderOf uC = orderOf s := (Subgroup.orderOf_coe uC).symm
+    have h_ord : orderOf sC = orderOf s := (Subgroup.orderOf_coe sC).symm
     rw [h_ord]
     exact hn
 
   have hmodEq :
-      Nat.card { c : C ⧸ H // uC • c = c } ≡
+      Nat.card { c : C ⧸ H // sC • c = c } ≡
         Nat.card (C ⧸ H) [MOD p] := by
-    exact card_fixedPoints_pSingular_modEq H (uC : C) huC
+    exact card_fixedPoints_pSingular_modEq H sC hsC
 
   have hdvd :
       (p : ℤ) ∣
         (Nat.card (C ⧸ H) : ℤ) -
-          (Nat.card { c : C ⧸ H // uC • c = c } : ℤ) := by
+          (Nat.card { c : C ⧸ H // sC • c = c } : ℤ) := by
     apply Int.ModEq.dvd
     exact Int.natCast_modEq_iff.mpr hmodEq
 
   -- `t` measures the difference between the quotient cardinality and the
   -- fixed-point cardinality.
   obtain ⟨t, ht⟩ := hdvd
-  let z : Zlocal p := -↑(faa⁻¹) * (t : Zlocal p)
+  let z : Zlocal p := -↑(fa_unit⁻¹) * (t : Zlocal p)
   use z
   unfold e_a
   rw [ClassFun.Zlocal.smul_apply, hf_fix]
 
   have h_card_rel :
-      (Nat.card { c : C ⧸ H // uC • c = c } : k) =
+      (Nat.card { c : C ⧸ H // sC • c = c } : k) =
         (Nat.card (C ⧸ H) : k) - (t : k) * (p : k) := by
     have ht_int :
-        (Nat.card { c : C ⧸ H // uC • c = c } : ℤ) =
+        (Nat.card { c : C ⧸ H // sC • c = c } : ℤ) =
           (Nat.card (C ⧸ H) : ℤ) - (p : ℤ) * t := by
       omega
     have h_cast := congrArg (fun x : ℤ => (x : k)) ht_int
@@ -265,11 +264,11 @@ lemma e_a_congr_pSingular
   letI : Fintype H := Fintype.ofFinite H
   letI : Fintype (P_of_Z p a) := Fintype.ofFinite (P_of_Z p a)
 
-  have h_u0_val :
-      Zlocal.toK (k := k) p (faa : Zlocal p) =
+  have h_fa_unit_toK_card :
+      Zlocal.toK (k := k) p (fa_unit : Zlocal p) =
         (Nat.card (C ⧸ H) : k) := by
-    rw [hu0, ClassFun.f_a_apply_a_eq_bernsteinIndex (k := k) p ha]
-    unfold ClassFun.bernsteinIndex
+    rw [h_fa_unit_toK, ClassFun.Bernstein.f_apply_a_eq_index (k := k) p ha]
+    unfold ClassFun.Bernstein.index
     rw [Subgroup.card_eq_card_quotient_mul_card_subgroup H]
     simp only [Nat.card_eq_fintype_card, Nat.cast_inj]
     have h_H_card : Fintype.card (P_of_Z p a) = Fintype.card H := by
@@ -280,13 +279,13 @@ lemma e_a_congr_pSingular
     rw [Nat.mul_div_cancel]
     exact Fintype.card_pos
 
-  rw [h_card_rel, ← h_u0_val]
+  rw [h_card_rel, ← h_fa_unit_toK_card]
   simp only [z, map_units_inv, map_neg, map_mul, neg_mul]
   rw [mul_sub]
 
   have h_inv_mul :
-      ((Zlocal.toK (k := k) p) ↑faa)⁻¹ *
-          (Zlocal.toK (k := k) p) ↑faa = 1 := by
+      ((Zlocal.toK (k := k) p) ↑fa_unit)⁻¹ *
+          (Zlocal.toK (k := k) p) ↑fa_unit = 1 := by
     rw [← map_units_inv, ← map_mul, Units.inv_mul, map_one]
 
   rw [h_inv_mul]
@@ -317,7 +316,7 @@ lemma e_a_congr_pRegularPart
     have hs' : IsPSingular p s' := by
       dsimp [s']
       exact IsPSingular.conj' p hs x
-    have hu'_comm : Commute a s' := by
+    have hs'_comm : Commute a s' := by
       have ha_eq : a = x⁻¹ * r * x := by
         calc a = x⁻¹ * (x * a * x⁻¹) * x := by group
              _ = x⁻¹ * r * x := by rw [hx]
@@ -327,7 +326,7 @@ lemma e_a_congr_pRegularPart
         _ = x⁻¹ * (r * s) * x := by group
         _ = x⁻¹ * (s * r) * x := by rw [h_comm.eq]
         _ = (x⁻¹ * s * x) * (x⁻¹ * r * x) := by group
-    obtain ⟨z_local, hz_local⟩ := e_a_congr_pSingular (k:=k) p ha s' hs' hu'_comm
+    obtain ⟨z_local, hz_local⟩ := e_a_congr_pSingular (k:=k) p ha s' hs' hs'_comm
     use z_local
     have h_conj_g : IsConj g (a * s') := by
       rw [isConj_iff]

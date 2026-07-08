@@ -127,12 +127,12 @@ lemma mul_mem_J [Fact p.Prime] [CharZero k]
 lemma f_a_mem_J
     [Fact p.Prime] [CharZero k] [IsAlgClosed k]
     (a : G) (ha : IsPRegular p a) :
-    ClassFun.f_a (k := k) p a ∈ J p := by
-  unfold ClassFun.f_a
+    ClassFun.Bernstein.f (k := k) p a ∈ J p := by
+  unfold ClassFun.Bernstein.f
   exact ind_mem_J p
     (E_subgroup p a)
     (E_isPElementary p ha)
-    (ClassFun.phi_mem_Q (k := k) p a ha)
+    (ClassFun.Bernstein.phi_mem_Q (k := k) p a ha)
 
 end IntegralIdeal
 
@@ -180,12 +180,12 @@ lemma J_subset_Jloc
 /-- Bernstein Step 8, localized form: `f_a ∈ Jloc p`. -/
 lemma f_a_mem_Jloc [IsAlgClosed k]
     (a : G) (ha : IsPRegular p a) :
-    ClassFun.f_a (k := k) p a ∈ Jloc p := by
-  unfold ClassFun.f_a
+    ClassFun.Bernstein.f (k := k) p a ∈ Jloc p := by
+  unfold ClassFun.Bernstein.f
   exact ind_mem_Jloc p
     (E_subgroup p a)
     (E_isPElementary p ha)
-    (ClassFun.phi_mem_Q (k := k) p a ha)
+    (ClassFun.Bernstein.phi_mem_Q (k := k) p a ha)
 
 /-- The localized span `Jloc_p` is closed under pointwise multiplication. -/
 lemma Jloc.mul_mem [IsAlgClosed k]

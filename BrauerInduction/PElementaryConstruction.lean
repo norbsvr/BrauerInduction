@@ -6,20 +6,34 @@ import BrauerInduction.Background.RingTheory.RootsOfUnity
 import BrauerInduction.PElementaryGroup
 
 /-!
-# Bernstein Step 8: the elementary subgroup and the function `f_a`
+# Bernstein Step 8: the elementary subgroup and induced class functions
 
 For a fixed prime `p` and a `p`-regular element `a`, this file constructs
-Bernstein's elementary subgroup `E(a)`, the class function `φ_a` on `E(a)`,
-and the induced class function `f_a = Ind_{E(a)}^G φ_a`.
+Bernstein's elementary subgroup `E(a)`, the class function `phi p k a` on
+`E(a)`, denoted `φ_a` in Bernstein's proof, and the induced class function `f p
+a`, denoted `f_a`.
 
-The file also proves Bernstein's character-sum formula for `φ_a`, the
-membership statement `φ_a ∈ Q(E(a))`, and the support and evaluation formulas
-for `f_a` needed in the local part of the proof.
+The file also proves Bernstein's character-sum formula for `phi`, the membership
+statement `phi p k a ∈ Q(E(a))`, and the support and evaluation formulas for `f
+p a` needed in the local part of the proof.
 -/
 
 universe u v
 
-open BrauerInduction
+/--
+Local finiteness instance for the roots of unity used in the Fourier expansion
+of `phi`.
+-/
+
+noncomputable local instance instFintypeRootsOfUnityOrderOf
+    {k : Type u} [Field k]
+    {G : Type v} [Group G] [Finite G]
+    (a : G) :
+    Fintype (rootsOfUnity (orderOf a) k) := by
+  have hfin : IsOfFinOrder a := isOfFinOrder_of_finite a
+  have hne0 : orderOf a ≠ 0 := (orderOf_ne_zero_iff).2 hfin
+  haveI : NeZero (orderOf a) := ⟨hne0⟩
+  exact rootsOfUnity.fintype k (orderOf a)
 
 namespace BrauerInduction
 
@@ -28,9 +42,9 @@ section ElementarySubgroup
 /-!
 ## The elementary subgroup `E(a)`
 
-This section constructs Bernstein's subgroup `E(a) = Cyc a ⊔ P_of_Z p a`,
-proves that it is `p`-elementary for `p`-regular `a`, and defines the
-projection `E(a) → Cyc a` coming from the product decomposition.
+This section constructs Bernstein's subgroup `E(a) = Cyc a ⊔ P_of_Z p a`, proves
+that it is `p`-elementary for `p`-regular `a`, and defines the projection `E(a)
+→ Cyc a` coming from the product decomposition.
 -/
 
 variable (p : ℕ)
@@ -188,6 +202,24 @@ noncomputable def E_P_equiv [Fact p.Prime]
     exact Subgroup.mem_sup_right hx
   exact Subgroup.subgroupOfEquivOfLe hP_le
 
+
+open PElementary in
+/--
+The identification `E_Cyc_equiv` does not change the underlying element of `G`.
+
+The cyclic factor of `associatedSubgroup ha` is internally a subgroup of `E(a)`,
+while `E_Cyc_equiv` identifies it with the ambient cyclic subgroup `Cyc a`. This
+lemma records that this identification is just the evident inclusion at the
+level of elements of `G`.
+-/
+@[simp]
+lemma E_Cyc_equiv_apply_coe [Fact p.Prime]
+    {a : G} (ha : IsPRegular p a)
+    (c : (associatedSubgroup (p := p) ha).C) :
+    ((E_Cyc_equiv (p := p) a ha c : Cyc a) : G) =
+      ((c : (Cyc a ⊔ P_of_Z p a : Subgroup G)) : G) := by
+  rfl
+
 open PElementary in
 /--
 The cardinality of `E(a)` is `orderOf a * |P_Z(a)|`.
@@ -231,8 +263,6 @@ lemma E_card [Fact p.Prime] [Finite G]
     _ = orderOf a * Nat.card (P_of_Z p a) := by
         rw [hC, hP]
 
-
-
 end ElementarySubgroup
 
 section CyclicCharacters
@@ -241,8 +271,8 @@ section CyclicCharacters
 ## Cyclic exponents and characters of `Cyc a`
 
 This section chooses integer exponents for elements of the cyclic subgroup
-`Cyc a` and defines the linear character `chiCyc ζ`, which sends the
-distinguished generator `a` to the root of unity `ζ`.
+`Cyc a` and defines the linear character `chiCyc ζ`, which sends the distinguished
+generator `a` to the root of unity `ζ`.
 -/
 
 variable {k : Type u} [CommRing k]
@@ -314,8 +344,8 @@ noncomputable def chiCyc
 
 open PElementary in
 /--
-The cyclic character `χ_ζ` sends the distinguished generator `a` of `Cyc a`
-to the root of unity `ζ`.
+The cyclic character `χ_ζ` sends the distinguished generator `a` of `Cyc a` to
+the root of unity `ζ`.
 -/
 lemma chiCyc_apply_generator
     {G : Type v} [Group G]
@@ -389,10 +419,9 @@ section CharactersOnE
 /-!
 ## Characters and one-dimensional representations of `E(a)`
 
-This section extends linear characters of `Cyc a` to `E(a)` using the
-projection `E_to_Cyc`.  The root-of-unity family is represented by
-`psiEZeta`, and `VpsiEZeta` is the corresponding one-dimensional
-representation.
+This section extends linear characters of `Cyc a` to `E(a)` using the projection
+`E_to_Cyc`.  The root-of-unity family is represented by `psiEZeta`, and
+`VpsiEZeta` is the corresponding one-dimensional representation.
 -/
 
 variable (p : ℕ) [Fact p.Prime]
@@ -502,6 +531,39 @@ lemma psiEZeta_apply_a_inv_mem_Lambda [Finite G]
     (E_to_Cyc p a ha ⟨a⁻¹, haInvMem⟩)
 
 
+open PElementary in
+
+lemma psiEZeta_apply_eq_one_of_mem_P [Finite G]
+    {a : G} (ha : IsPRegular p a)
+    (ζ : rootsOfUnity (orderOf a) k)
+    (y : E_subgroup p a)
+    (hyP : (y : G) ∈ P_of_Z p a) :
+    psiEZeta p ha ζ y = 1 := by
+  rw [psiE_apply_eq_chiCyc_cycPart p ha ζ y]
+
+  let yG : G := (y : G)
+  have hyH : yG ∈ Cyc a ⊔ P_of_Z p a := y.property
+  let ySub : ↥(Cyc a ⊔ P_of_Z p a) := ⟨yG, hyH⟩
+
+  have h_c_one_internal :
+      ((mulEquivProd (associatedSubgroup ha)).symm ySub).1 = 1 := by
+    let H_elem := associatedSubgroup ha
+    let iso := mulEquivProd H_elem
+    let pElem : H_elem.P := ⟨ySub, hyP⟩
+    have h_iso_fwd : iso (1, pElem) = ySub := by
+      ext
+      exact one_mul yG
+    have h_iso_symm := congr_arg iso.symm h_iso_fwd
+    rw [MulEquiv.symm_apply_apply] at h_iso_symm
+    exact congr_arg Prod.fst h_iso_symm.symm
+
+  have h_c_one : E_to_Cyc p a ha y = 1 := by
+    rw [E_to_Cyc_apply]
+    exact (MulEquiv.map_eq_one_iff (E_Cyc_equiv p a ha)).mpr h_c_one_internal
+
+  rw [h_c_one]
+  exact MonoidHom.map_one (chiCyc ζ)
+
 end CharactersOnE
 
 end BrauerInduction
@@ -510,29 +572,18 @@ namespace ClassFun
 
 open BrauerInduction
 
-/--
-Local finiteness instance for the roots of unity used in the Fourier expansion
-of `phi_fun`.
--/
-
-noncomputable local instance instFintypeRootsOfUnityOrderOf
-    {k : Type u} [Field k]
-    {G : Type v} [Group G] [Finite G]
-    (a : G) :
-    Fintype (rootsOfUnity (orderOf a) k) := by
-  have hfin : IsOfFinOrder a := isOfFinOrder_of_finite a
-  have hne0 : orderOf a ≠ 0 := (orderOf_ne_zero_iff).2 hfin
-  haveI : NeZero (orderOf a) := ⟨hne0⟩
-  exact rootsOfUnity.fintype k (orderOf a)
-
-section PhiExpansion
+section Phi
+namespace Bernstein
 
 /-!
-## The root-of-unity expansion of `φ_a`
+## Bernstein's function `φ_a` and membership in `Q(E(a))`
 
-This section defines `phiSum`, the character-sum expression for Bernstein's
-function `φ_a`, and proves the elementary evaluations of the characters
-`psiEZeta` used to identify this sum with the direct definition of `φ_a`.
+This section defines Bernstein's class function `phi` on `E(a)`, the
+root-of-unity character sum `phiSum`, and the elementary evaluations of the
+characters `psiEZeta` used to prove `phi = phiSum`.
+
+It then packages the resulting integrality and cyclotomic-coefficient statements
+as `phi_mem_C_Z`, `phi_mem_R_Lambda`, and `phi_mem_Q`.
 -/
 
 variable (p : ℕ) [Fact p.Prime]
@@ -561,7 +612,6 @@ noncomputable def phiSum
     ∑ ζ : rootsOfUnity (orderOf a) k,
       (((psiEZeta p ha ζ) ⟨a⁻¹, haInvMem⟩ : kˣ) : k)
         • ClassFun.character (VpsiEZeta p ha ζ)
-
 
 open PElementary in
 /--
@@ -614,61 +664,9 @@ lemma phiSum_apply_product_eq_combine [Finite G]
   simp only [Units.val_mul]
 
 open PElementary in
-
-lemma psiEZeta_apply_eq_one_of_mem_P [Finite G]
-    {a : G} (ha : IsPRegular p a)
-    (ζ : rootsOfUnity (orderOf a) k)
-    (y : E_subgroup p a)
-    (hyP : (y : G) ∈ P_of_Z p a) :
-    psiEZeta p ha ζ y = 1 := by
-  rw [psiE_apply_eq_chiCyc_cycPart p ha ζ y]
-
-  let yG : G := (y : G)
-  have hyH : yG ∈ Cyc a ⊔ P_of_Z p a := y.property
-  let ySub : ↥(Cyc a ⊔ P_of_Z p a) := ⟨yG, hyH⟩
-
-  have h_c_one_internal :
-      ((mulEquivProd (associatedSubgroup ha)).symm ySub).1 = 1 := by
-    let H_elem := associatedSubgroup ha
-    let iso := mulEquivProd H_elem
-    let pElem : H_elem.P := ⟨ySub, hyP⟩
-    have h_iso_fwd : iso (1, pElem) = ySub := by
-      ext
-      exact one_mul yG
-    have h_iso_symm := congr_arg iso.symm h_iso_fwd
-    rw [MulEquiv.symm_apply_apply] at h_iso_symm
-    exact congr_arg Prod.fst h_iso_symm.symm
-
-  have h_c_one : E_to_Cyc p a ha y = 1 := by
-    rw [E_to_Cyc_apply]
-    exact (MulEquiv.map_eq_one_iff (E_Cyc_equiv p a ha)).mpr h_c_one_internal
-
-  rw [h_c_one]
-  exact MonoidHom.map_one (chiCyc ζ)
-
-open PElementary in
-
-open PElementary in
 /--
-The identification `E_Cyc_equiv` does not change the underlying element of `G`.
-
-The cyclic factor of `associatedSubgroup ha` is internally a subgroup of
-`E(a)`, while `E_Cyc_equiv` identifies it with the ambient cyclic subgroup
-`Cyc a`. This lemma records that this identification is just the evident
-inclusion at the level of elements of `G`.
--/
-@[simp]
-lemma E_Cyc_equiv_apply_coe
-    {a : G} (ha : IsPRegular p a)
-    (c : (associatedSubgroup (p := p) ha).C) :
-    ((E_Cyc_equiv (p := p) a ha c : Cyc a) : G) =
-      ((c : (Cyc a ⊔ P_of_Z p a : Subgroup G)) : G) := by
-  rfl
-
-open PElementary in
-/--
-If an element of `E(a)` is not in the `P`-part, then the sum of the
-linear characters `ψ_ζ` over all roots of unity vanishes.
+If an element of `E(a)` is not in the `P`-part, then the sum of the linear
+characters `ψ_ζ` over all roots of unity vanishes.
 
 This is the first point in the construction where the coefficient field is
 assumed algebraically closed: the proof uses the full set of `orderOf a`-th
@@ -742,30 +740,11 @@ lemma sum_psiEZeta_eq_zero_of_not_mem_P
   have:  NeZero (orderOf a) := IsPRegular.neZero_orderOf p ha
   exact rootsOfUnity.sum_zpow_eq_zero_of_not_dvd (orderOf a) n h_ndiv
 
-end PhiExpansion
-
-section PhiFunction
-
-/-!
-## The function `φ_a` and membership in `Q(E(a))`
-
-This section defines `phi_fun` directly, proves that it agrees with the
-root-of-unity expansion `phiSum`, and packages the two membership statements
-`phi_fun ∈ R_Lambda` and `phi_fun ∈ C_Z` as `phi_mem_Q`.
--/
-
-variable (p : ℕ) [Fact p.Prime]
-variable {k : Type u} [CommRing k]
-variable {G : Type v} [Group G]
-
 open Classical in
 /--
 Bernstein's function `φ_a` on `E(a)`.
-
-It takes the value `orderOf a` on elements whose `p`-regular part is `a`, and
-takes the value `0` elsewhere.
 -/
-noncomputable def phi_fun
+noncomputable def phi
     (k : Type u) [CommRing k] (a : G) :
   ClassFun k (E_subgroup p a) where
   toFun := fun x => if Group.pRegular p (x : G) = a then (orderOf a : k) else 0
@@ -802,34 +781,36 @@ noncomputable def phi_fun
 
 open Classical in
 @[simp]
-lemma phi_fun_apply [Finite G]
+lemma phi_apply
+    (k : Type u) [CommRing k]
     {a : G} (x : E_subgroup p a) :
-    phi_fun  p k a x =
+    phi  p k a x =
       if Group.pRegular p (x : G) = a then (orderOf a : k) else 0 :=
   rfl
 
-lemma phi_mem_C_Z (a : G) :
-    phi_fun p k a ∈ C_Z k (E_subgroup p a) := by
+lemma phi_mem_C_Z (a : G)
+    (k : Type u) [CommRing k] :
+    phi p k a ∈ C_Z k (E_subgroup p a) := by
   intro x
   by_cases h : Group.pRegular p (x : G) = a
   · refine ⟨(orderOf a : ℤ), ?_⟩
-    simp [phi_fun, h]
+    simp [phi, h]
   · refine ⟨0, ?_⟩
-    simp [phi_fun, h]
+    simp [phi, h]
 
 open Classical PElementary in
 /--
 Bernstein's root-of-unity expansion of `φ_a`.
 
-This identifies the direct definition `phi_fun` with the character sum `phiSum`.
+This identifies the direct definition `phi` with the character sum `phiSum`.
 -/
-lemma phi_fun_eq_phiSum
+lemma phi_eq_phiSum
     {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
     [Finite G]
     {a : G} (ha : IsPRegular p a) :
-    phi_fun p k a = phiSum  (k := k) (p := p) ha := by
+    phi p k a = phiSum  (k := k) (p := p) ha := by
   ext x
-  rw [phi_fun_apply (k := k) (p := p) x]
+  rw [phi_apply (k := k) (p := p) x]
   rw [phiSum_apply_expand (k := k) (p := p) ha x]
   rw [phiSum_apply_product_eq_combine (k := k) (p := p) ha x]
   let aInvE : E_subgroup p a := ⟨a⁻¹, inv_mem_E_subgroup p a⟩
@@ -886,8 +867,8 @@ lemma phi_fun_eq_phiSum
 /--
 The character expansion `phiSum` lies in `R_Λ(E(a))`.
 
-Concretely, `phiSum` is a `Λ`-linear combination of the characters `VpsiEZeta`,
-viewed as characters of one-dimensional representations of `E(a)`.
+Concretely, `phiSum` is a `Λ`-linear combination of the characters
+`VpsiEZeta`, viewed as characters of one-dimensional representations of `E(a)`.
 -/
 lemma phiSum_mem_R_Lambda
     {k : Type u} [Field k]
@@ -930,9 +911,9 @@ lemma phi_mem_R_Lambda
     {k : Type u} [Field k] [IsAlgClosed k] [CharZero k]
     {G : Type u} [Group G] [Finite G]
     (a : G) (ha : IsPRegular p a) :
-    phi_fun p k a ∈ R_Lambda k G (E_subgroup p a) := by
-    have hEq : phi_fun p k a = phiSum (k := k) (p := p) ha := by
-      exact phi_fun_eq_phiSum p ha
+    phi p k a ∈ R_Lambda k G (E_subgroup p a) := by
+    have hEq : phi p k a = phiSum (k := k) (p := p) ha := by
+      exact phi_eq_phiSum p ha
     simpa [hEq] using (phiSum_mem_R_Lambda p ha)
 
 /-- Bernstein Step 8, Claim (i): `φ ∈ Q(E)`. -/
@@ -940,43 +921,45 @@ lemma phi_mem_Q
     {k : Type u} [Field k] [IsAlgClosed k] [CharZero k]
     {G : Type u} [Group G] [Finite G]
     (a : G) (ha : IsPRegular p a) :
-    phi_fun p k a ∈ Q_sys k G (E_subgroup p a) := by
+    phi p k a ∈ Q_sys k G (E_subgroup p a) := by
   exact ⟨
     phi_mem_R_Lambda p a ha,
-    phi_mem_C_Z p a
+    phi_mem_C_Z p a k
   ⟩
 
-end PhiFunction
+end Bernstein
+end Phi
 
 section InducedFunction
+namespace Bernstein
 
 /-!
-## The induced class function `f_a` and its support
+## The induced class function `f` and its support
 
-This section defines `f_a = Ind_{E(a)}^G φ_a` and proves the basic support
-statement: `f_a x` vanishes when the `p`-regular part of `x` is not conjugate
-to `a`.
+This section defines `f p a = Ind_{E(a)}^G (phi p k a)` and proves the basic
+support statement: `f p a x` vanishes when the `p`-regular part of `x` is not
+conjugate to `a`.
 -/
 
 variable (p : ℕ)
 variable {k : Type u} [Field k]
 variable {G : Type v} [Group G] [Fact p.Prime]
 
-/-- Bernstein Step 8: `f_a = Ind_E^G φ`. -/
-noncomputable def f_a [Fintype G]
+/-- Bernstein Step 8: the induced class function `f`, denoted `f_a` in the proof. -/
+noncomputable def f [Fintype G]
     (a : G) : ClassFun k G :=
-  ClassFun.ind (k := k)  (E_subgroup p a)  (phi_fun p k a)
+  ClassFun.ind (k := k)  (E_subgroup p a)  (phi p k a)
 
 /-- Bernstein Step 8, Claim (ii), support part.
 
-If the p-regular part of `x` is not conjugate to `a`, then the induced
-function `f_a` vanishes at `x`.
+If the `p`-regular part of `x` is not conjugate to `a`, then the induced function
+`f` vanishes at `x`.
 -/
-lemma f_a_apply_eq_zero_of_not_isConj [Fintype G]
+lemma f_apply_eq_zero_of_not_isConj [Fintype G]
     (a x : G)
     (hx : ¬ IsConj (Group.pRegular p x) a) :
-    f_a (k := k) p a x = 0 := by
-  unfold f_a
+    f (k := k) p a x = 0 := by
+  unfold f
   rw [ClassFun.ind_apply]
 
   apply Finset.sum_eq_zero
@@ -1000,13 +983,13 @@ lemma f_a_apply_eq_zero_of_not_isConj [Fintype G]
       refine ⟨q.out⁻¹, ?_⟩
       rw [inv_inv]
       exact hconj_eq
-    simp only [hE, ↓reduceDIte, phi_fun, ClassFun.coe_mk, hne, ↓reduceIte]
+    simp only [hE, ↓reduceDIte, phi, ClassFun.coe_mk, hne, ↓reduceIte]
 
   · simp [hE]
 
 /--
-For a `p`-regular element `a`, the conjugate `x⁻¹ a x` contributes nontrivially
-to `φ_a` exactly when `x` centralizes `a`.
+For a `p`-regular element `a`, the conjugate `x⁻¹ * a * x` contributes
+nontrivially to `phi p k a` exactly when `x` centralizes `a`.
 -/
 lemma conj_inv_mem_E_and_phi_nonzero_iff [Finite G]
     {a : G} (ha : IsPRegular p a) (x : G) :
@@ -1055,14 +1038,17 @@ lemma conj_inv_mem_E_and_phi_nonzero_iff [Finite G]
     · rw [h_eq]
       exact Group.pRegular_eq_self_of_isPRegular p (isOfFinOrder_of_finite a) ha
 
+end Bernstein
 end InducedFunction
 
 section EvaluationAtA
 
-/-!
-## Evaluation of `f_a` at `a`
+namespace Bernstein
 
-This section computes `f_a(a)`.  The result is expressed as Bernstein's index,
+/-!
+## Evaluation of `f` at `a`
+
+This section computes `f(a)`.  The result is expressed as Bernstein's index,
 the index of the chosen Sylow `p`-subgroup in the centralizer of `a`, and is
 shown to be prime to `p`.
 -/
@@ -1072,21 +1058,21 @@ variable {k : Type u} [Field k]
 variable {G : Type v} [Group G]
 
 /--
-Closed formula for `f_a(a)` in terms of the centralizer of `a`, the subgroup
+Closed formula for `f(a)` in terms of the centralizer of `a`, the subgroup
 `E(a)`, and `orderOf a`.
 -/
-lemma f_a_apply_a_closed_form
+lemma f_apply_a_closed_form
     [CharZero k] [Fintype G]
     {a : G} (ha : IsPRegular p a) :
-    f_a (k := k) p a a
+    f (k := k) p a a
       =
     (Nat.card (E_subgroup p a) : k)⁻¹
       * (Nat.card (Subgroup.centralizer ({a} : Set G)) : k)
       * (orderOf a : k) := by
   classical
-  unfold f_a
+  unfold f
   rw [ClassFun.ind_apply_eq_inv_mul_sum]
-  dsimp [phi_fun]
+  dsimp [phi]
 
   have h_integrand :
       (fun x : G =>
@@ -1137,96 +1123,81 @@ lemma f_a_apply_a_closed_form
 Bernstein's index attached to `a`: the index of the chosen Sylow `p`-subgroup
 inside the centralizer of `a`.
 -/
-noncomputable def bernsteinIndex (x : G) : ℕ :=
+noncomputable def index (x : G) : ℕ :=
   Nat.card (Subgroup.centralizer
     ({x} : Set G)) / Nat.card (PElementary.P_of_Z  p x)
 
 open Subgroup PElementary in
 /--
-Evaluation of `f_a` at `a * u`, where `u` is `p`-singular and commutes with
-`a`, as a filtered count of conjugates of `u` lying in `P_Z(a)`.
+The value of `f p a` at `a` is Bernstein's index: the index of the
+chosen Sylow `p`-subgroup `P_Z(a)` inside the centralizer of `a`.
 -/
-lemma f_a_apply_a_eq_bernsteinIndex
+lemma f_apply_a_eq_index
     [CharZero k] [Fintype G]
     {a : G} (ha : IsPRegular p a) :
-    f_a (k := k) p a a = (bernsteinIndex p a : k) := by
-  rw [f_a_apply_a_closed_form p ha]
+    f (k := k) p a a = (index p a : k) := by
+  rw [f_apply_a_closed_form p ha]
   have hE_card : Nat.card (E_subgroup p a) = orderOf a * Nat.card (P_of_Z  p a) := E_card p ha
   have hC_card : Nat.card (centralizer ({a} : Set G)) =
-      bernsteinIndex p a * Nat.card (P_of_Z  p a) := by
+      index p a * Nat.card (P_of_Z  p a) := by
     have h_dvd : Nat.card (P_of_Z  p a) ∣ Nat.card (centralizer ({a} : Set G)) := by
       rw [PElementary.card_P_of_Z_eq_card_P_in_Z a]
       exact card_subgroup_dvd_card (P_in_Z p a : Subgroup (centralizer ({a} : Set G)))
-    rw [bernsteinIndex, Nat.div_mul_cancel h_dvd]
+    rw [index, Nat.div_mul_cancel h_dvd]
   have h_kE : (Nat.card (E_subgroup p a) : k) =
       (orderOf a : k) * (Nat.card (P_of_Z  p a) : k) := by
     rw [hE_card, Nat.cast_mul]
   have h_kC : (Nat.card (centralizer ({a} : Set G)) : k)
-      = (bernsteinIndex  p a : k) * (Nat.card (P_of_Z  p a) : k) := by
+      = (index  p a : k) * (Nat.card (P_of_Z  p a) : k) := by
     rw [hC_card, Nat.cast_mul]
   rw [h_kE, h_kC]
   have h_ord_ne_zero : (orderOf a : k) ≠ 0 := Nat.cast_ne_zero.mpr (orderOf_pos a).ne'
   have h_P_ne_zero : (Nat.card (P_of_Z  p a) : k) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  calc ((orderOf a : k) * (Nat.card (P_of_Z  p a) : k))⁻¹ * ((bernsteinIndex p a : k) *
+  calc ((orderOf a : k) * (Nat.card (P_of_Z  p a) : k))⁻¹ * ((index p a : k) *
           (Nat.card (P_of_Z  p a) : k)) * (orderOf a : k)
-    _ = (orderOf a : k)⁻¹ * (Nat.card (P_of_Z  p a) : k)⁻¹ * ((bernsteinIndex p a : k) *
+    _ = (orderOf a : k)⁻¹ * (Nat.card (P_of_Z  p a) : k)⁻¹ * ((index p a : k) *
           (Nat.card (P_of_Z  p a) : k)) * (orderOf a : k) := by rw [mul_inv]
-    _ = (bernsteinIndex p a : k) * ((Nat.card (P_of_Z  p a) : k)⁻¹ * (Nat.card (P_of_Z  p a) : k))
+    _ = (index p a : k) * ((Nat.card (P_of_Z  p a) : k)⁻¹ * (Nat.card (P_of_Z  p a) : k))
           * ((orderOf a : k)⁻¹ * (orderOf a : k)) := by ring
-    _ = (bernsteinIndex p a : k) * 1 * 1 :=
+    _ = (index p a : k) * 1 * 1 :=
         by rw [inv_mul_cancel₀ h_P_ne_zero, inv_mul_cancel₀ h_ord_ne_zero]
-    _ = (bernsteinIndex p a : k) :=
+    _ = (index p a : k) :=
         by ring
 
 open PElementary in
-lemma f_a_apply_self_coprime
+lemma f_apply_self_coprime
     [CharZero k] [Fintype G]
     {a : G} (ha : IsPRegular p a) :
     ∃ n : ℤ,
-      f_a (k := k) p a a = (n : k) ∧
+      f (k := k) p a a = (n : k) ∧
         ¬ (p : ℤ) ∣ n := by
-  let n : ℕ := bernsteinIndex p a
+  let n : ℕ := index p a
   refine ⟨(n : ℤ), ?_, ?_⟩
-  · rw [f_a_apply_a_eq_bernsteinIndex (k := k) p ha]
+  · rw [f_apply_a_eq_index (k := k) p ha]
     simp [n]
   · rw [Int.ofNat_dvd]
-    simpa [n, bernsteinIndex] using
+    simpa [n, index] using
       PElementary.p_not_dvd_cardCentralizer_div_cardP
         (p := p) (x := a)
 
-end EvaluationAtA
-
-section EvaluationAtRegularTimesSingular
-
-/-!
-## Evaluation of `f_a` at `a * s`
-
-This section evaluates `f_a` on elements with `p`-regular part `a`.  The
-formula is first written as a filtered conjugacy count and then converted into
-a fixed-point count on cosets of `P_Z(a)` in the centralizer of `a`.
--/
-
-variable (p : ℕ)
-variable {k : Type u} [Field k]
-variable {G : Type v} [Group G] [Fact p.Prime]
-
 open Classical PElementary Subgroup in
 /--
-Evaluates f_a at x = a * s, reducing the induction sum to a count of elements in C_G(a)
-that conjugate s into the Sylow p-subgroup P_Z(a).
+Evaluation of `f p a` at `a * s`, where `s` is `p`-singular and
+commutes with `a`. The induction sum reduces to a count of elements of
+`C_G(a)` that conjugate `s` into the Sylow `p`-subgroup `P_Z(a)`.
 -/
-lemma f_a_apply_mul_pSingular_eq_sum
+lemma f_apply_mul_pSingular_eq_sum
     [CharZero k] [Fintype G]
-    {a : G} (ha : IsPRegular p a) (s : G) (hu_sing : IsPSingular p s) (hu_comm : Commute a s) :
-    f_a (k := k) (p := p) a (a * s) =
+    {a : G} (ha : IsPRegular p a) (s : G) (hs_sing : IsPSingular p s) (h_comm : Commute a s) :
+    f (k := k) (p := p) a (a * s) =
     (Nat.card (E_subgroup p a) : k)⁻¹ *
       ((Finset.univ.filter
           (fun x => x ∈ centralizer ({a} : Set G) ∧ x * s * x⁻¹ ∈ P_of_Z p a)).card : k)  *
       (orderOf a : k) := by
-  unfold f_a
+  unfold f
   rw [ClassFun.ind_apply_eq_inv_mul_sum_mul_inv]
   simp only [Nat.card_eq_fintype_card]
-  dsimp [phi_fun]
+  dsimp [phi]
   have hfa := isOfFinOrder_of_finite a
   have hfs := isOfFinOrder_of_finite s
   have h_sum :
@@ -1242,7 +1213,7 @@ lemma f_a_apply_mul_pSingular_eq_sum
         Group.pRegular p (x * (a * s) * x⁻¹) = x * a * x⁻¹ := by
       rw [Group.pRegular_conj]
       have h_au : Group.pRegular p (a * s) = a := by
-        rw [Group.pRegular_mul_eq_left_of_right_pSingular_commute p hfs hfa hu_sing hu_comm.symm]
+        rw [Group.pRegular_mul_eq_left_of_right_pSingular_commute p hfs hfa hs_sing h_comm.symm]
         exact Group.pRegular_eq_self_of_isPRegular p hfa ha
       rw [h_au]
     by_cases hxC : x ∈ centralizer ({a} : Set G)
@@ -1265,7 +1236,7 @@ lemma f_a_apply_mul_pSingular_eq_sum
           have h_cancel : a⁻¹ * (a * (x * s * x⁻¹)) = x * s * x⁻¹ := by group
           rw [h_cancel] at h_mul
           let h_elem := associatedSubgroup ha
-          have h_sing : IsPSingular p (x * s * x⁻¹) := (IsPSingular.isConj p hu_sing) (by simp)
+          have h_sing : IsPSingular p (x * s * x⁻¹) := (IsPSingular.isConj p hs_sing) (by simp)
           let z : E_subgroup p a := ⟨x * s * x⁻¹, h_mul⟩
           have hz_sing : IsPSingular p z := by
               simpa [z] using
@@ -1307,20 +1278,23 @@ lemma f_a_apply_mul_pSingular_eq_sum
 
 open Classical PElementary Subgroup in
 /--
-Evaluation of `f_a(a * )` as the number of fixed cosets of `P_Z(a)` in the
+For a `p`-regular element `a` and a commuting `p`-singular element `s`, the
+value of `f p a` at `a * s` is the number of fixed cosets of `P_Z(a)` in the
 centralizer of `a`.
+
+This is the fixed-point count appearing in Bernstein's Step 8.
 -/
-lemma f_a_apply_mul_pSingular_eq_Nfix
+lemma f_apply_mul_pSingular_eq_card_fixedCosets
     [CharZero k] [Fintype G]
-    {a : G} (ha : IsPRegular p a) (s : G) (hu_sing : IsPSingular p s) (hu_comm : Commute a s) :
-    f_a (k := k) p a (a * s) =
+    {a : G} (ha : IsPRegular p a) (s : G) (hs_sing : IsPSingular p s) (h_comm : Commute a s) :
+    f (k := k) p a (a * s) =
     (Nat.card { c : ↥(centralizer ({a} : Set G)) ⧸ (P_in_Z p a : Subgroup _) //
-      (⟨s, fun y hy => by rcases hy with rfl; exact hu_comm.eq⟩ :
+      (⟨s, fun y hy => by rcases hy with rfl; exact h_comm.eq⟩ :
         ↥(centralizer ({a} : Set G))) • c = c } : k) := by
-  rw [f_a_apply_mul_pSingular_eq_sum p ha s hu_sing hu_comm]
+  rw [f_apply_mul_pSingular_eq_sum p ha s hs_sing h_comm]
   let Z_group := centralizer ({a} : Set G)
   let P_Z : Subgroup Z_group := P_in_Z p a
-  let s_Z : Z_group := ⟨s, fun y hy => by rcases hy with rfl; exact hu_comm.eq⟩
+  let s_Z : Z_group := ⟨s, fun y hy => by rcases hy with rfl; exact h_comm.eq⟩
   have h_set_card :
       (Finset.univ.filter (fun x : G => x ∈ Z_group ∧ x * s * x⁻¹ ∈ P_of_Z p a)).card =
       Nat.card { x : G // x ∈ Z_group ∧ x * s * x⁻¹ ∈ P_of_Z p a } := by
@@ -1405,15 +1379,18 @@ lemma f_a_apply_mul_pSingular_eq_Nfix
         by rw [inv_mul_cancel₀ h_P_ne_zero, inv_mul_cancel₀ h_ord_ne_zero]
   _ = (Nat.card { c : Z_group ⧸ P_Z // s_Z • c = c } : k) := by ring
 
-end EvaluationAtRegularTimesSingular
+end Bernstein
+end EvaluationAtA
 
 section ZlocalEvaluation
 
+namespace Bernstein
+
 /-!
-## The `p`-local value of `f_a(a)`
+## The `p`-local value of `f(a)`
 
 This final section reinterprets Bernstein's index in the localization `Zlocal p`
-and proves that `f_a(a)` is the image of a unit in the `p`-local integers.
+and proves that `f(a)` is the image of a unit in the `p`-local integers.
 -/
 
 variable (p : ℕ)
@@ -1423,52 +1400,54 @@ variable {G : Type v} [Group G] [Fact p.Prime]
 /--
 Index viewed in `ℤ`.
 -/
-noncomputable def bernsteinIndexZ (x : G) : ℤ :=
-  (bernsteinIndex p x : ℤ)
+noncomputable def indexZ (x : G) : ℤ :=
+  (index p x : ℤ)
 
 lemma bernsteinIndexZ_mem_intCoprimeSubmonoid [Finite G]
     (x : G) :
-    bernsteinIndexZ p x ∈ Zlocal.intCoprimeSubmonoid p := by
+    indexZ p x ∈ Zlocal.intCoprimeSubmonoid p := by
   have hp : Nat.Prime p := (Fact.out : Nat.Prime p)
-  have hnnot : ¬ p ∣ bernsteinIndex  p x := by
-    simpa [bernsteinIndex] using
+  have hnnot : ¬ p ∣ index  p x := by
+    simpa [index] using
       (PElementary.p_not_dvd_cardCentralizer_div_cardP  (p := p) x)
-  have hcop : Nat.Coprime (bernsteinIndex  p x) p := by
+  have hcop : Nat.Coprime (index  p x) p := by
     apply Nat.Coprime.symm
     exact (hp.coprime_iff_not_dvd).2 hnnot
-  simpa [bernsteinIndexZ, bernsteinIndex, Zlocal.intCoprimeSubmonoid, hcop]
+  simpa [indexZ, index, Zlocal.intCoprimeSubmonoid, hcop]
 
 lemma bernsteinIndexZ_isUnit_in_Zlocal [Finite G]
     (x : G) :
-    IsUnit (algebraMap ℤ (Zlocal p) (bernsteinIndexZ  p x)) := by
+    IsUnit (algebraMap ℤ (Zlocal p) (indexZ  p x)) := by
   have hxmem :
-      bernsteinIndexZ p x ∈ Zlocal.intCoprimeSubmonoid p :=
+      indexZ p x ∈ Zlocal.intCoprimeSubmonoid p :=
         bernsteinIndexZ_mem_intCoprimeSubmonoid  (p := p) x
   simpa using
     (IsLocalization.map_units
       (R := ℤ) (M := Zlocal.intCoprimeSubmonoid p) (S := Zlocal p)
-      (y := ⟨bernsteinIndexZ  p x, hxmem⟩))
+      (y := ⟨indexZ  p x, hxmem⟩))
 
 /--
-f_a(a) evaluates exactly to the image of a unit in the p-local integers.
+The value `f p a a` is the image of a unit in the `p`-local integers.
 -/
-lemma f_a_apply_a_isUnit_Zlocal
+lemma f_apply_a_isUnit_Zlocal
     {k : Type u} [Field k] [CharZero k] [Fintype G]
     {a : G} (ha : IsPRegular p a) :
-    ∃ u : (Zlocal p)ˣ, Zlocal.toK (k := k) p (u : Zlocal p) = f_a p a a := by
-  have h_eq := f_a_apply_a_eq_bernsteinIndex (k := k) p ha
+    ∃ u : (Zlocal p)ˣ, Zlocal.toK (k := k) p (u : Zlocal p) = f p a a := by
+  have h_eq := f_apply_a_eq_index (k := k) p ha
   have h_unit := bernsteinIndexZ_isUnit_in_Zlocal  p a
   use h_unit.unit
-  have h_val : (h_unit.unit : Zlocal p) = algebraMap ℤ (Zlocal p) (bernsteinIndexZ  p a) :=
+  have h_val : (h_unit.unit : Zlocal p) = algebraMap ℤ (Zlocal p) (indexZ  p a) :=
     h_unit.unit_spec
   rw [h_eq, h_val]
-  have h_hom_eval : Zlocal.toK (k := k) p (algebraMap ℤ (Zlocal p) (bernsteinIndexZ  p a))
-      = (bernsteinIndexZ  p a : k) := by
+  have h_hom_eval : Zlocal.toK (k := k) p (algebraMap ℤ (Zlocal p) (indexZ  p a))
+      = (indexZ  p a : k) := by
     unfold Zlocal.toK
     exact IsLocalization.lift_eq
-        (M := Zlocal.intCoprimeSubmonoid p) (g := Int.castRingHom k) _ (bernsteinIndexZ  p a)
+        (M := Zlocal.intCoprimeSubmonoid p) (g := Int.castRingHom k) _ (indexZ  p a)
   rw [h_hom_eval]
-  simp only [bernsteinIndexZ, Int.cast_natCast]
+  simp only [indexZ, Int.cast_natCast]
+
+end Bernstein
 
 end ZlocalEvaluation
 

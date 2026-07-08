@@ -635,14 +635,14 @@ lemma pDecomp_mul_of_commute [Fact p.Prime]
   let br := Group.pRegular p b
   let bs := Group.pSingular p b
   let cr := ar * br
-  let cu := as * bs
+  let cs := as * bs
   -- 1 & 2. Use IsPRegular.mul and IsPSingular.mul lemmas
   have hcr : IsPRegular p cr :=
     (isPRegular_pRegular p ha).mul p (isPRegular_pRegular p hb) (pRegular.commute p hcomm)
-  have hcu : IsPSingular p cu :=
+  have hcs : IsPSingular p cs :=
     (isPSingular_pSingular p a).mul p (isPSingular_pSingular p b) (pSingular.commute p hcomm)
   -- 3. Show cu * cr = a * b
-  have h_prod : cu * cr = a * b := by
+  have h_prod : cs * cr = a * b := by
     rw [mul_assoc, ← mul_assoc bs]
     have: Commute bs ar := Commute.zpow_zpow hcomm.symm _ _
     rw [this, mul_assoc, ← mul_assoc as]
@@ -650,7 +650,7 @@ lemma pDecomp_mul_of_commute [Fact p.Prime]
     have hcomm_b : Commute bs br := pDecomp_commute p b
     rw [hcomm_a.eq, hcomm_b.eq, pDecomp' p hb, pDecomp' p ha]
   -- 4. Show cr and cu commute
-  have hcomm_c : Commute cu cr := by
+  have hcomm_c : Commute cs cr := by
     apply Commute.mul_left
     · apply Commute.mul_right
       · exact pDecomp_commute p a
@@ -659,10 +659,10 @@ lemma pDecomp_mul_of_commute [Fact p.Prime]
       · exact Commute.zpow_zpow hcomm.symm _ _
       · exact pDecomp_commute p b
   -- 5. Apply uniqueness to get both equalities
-  have h_prod_rev : cr * cu = a * b := by
+  have h_prod_rev : cr * cs = a * b := by
     rw [← hcomm_c.eq, h_prod]
   have hfab : IsOfFinOrder (a * b) := Commute.isOfFinOrder_mul hcomm ha hb
-  obtain ⟨hs_eq, hr_eq⟩ := pSingular_pRegular_unique p hfab h_prod h_prod_rev hcu hcr
+  obtain ⟨hs_eq, hr_eq⟩ := pSingular_pRegular_unique p hfab h_prod h_prod_rev hcs hcr
   exact ⟨hs_eq.symm, hr_eq.symm⟩
 
 /-- Two p-regular parts multiply together if the original elements commute. -/
@@ -698,18 +698,18 @@ lemma pow_ordProj_eq_pRegular_pow_ordProj [Fact p.Prime]
     {a : G} (h : IsOfFinOrder a) :
     a ^ ordProj[p] (orderOf a) = Group.pRegular p a ^ ordProj[p] (orderOf a) := by
   let n := ordProj[p] (orderOf a)
-  let ar := Group.pRegular p a
-  let as := Group.pSingular p a
-  have hdecomp : as * ar = a := pDecomp p h
-  have hcomm : Commute as ar := pDecomp_commute p a
-  have : as ^ n = 1 := by
-    have hdvd : orderOf as ∣ n := Group.orderOf_pSingular_dvd p a
+  let r := Group.pRegular p a
+  let s := Group.pSingular p a
+  have hdecomp : s * r = a := pDecomp p h
+  have hcomm : Commute s r := pDecomp_commute p a
+  have : s ^ n = 1 := by
+    have hdvd : orderOf s ∣ n := Group.orderOf_pSingular_dvd p a
     exact orderOf_dvd_iff_pow_eq_one.mp hdvd
   calc
-    a ^ n = (as * ar) ^ n := by rw [hdecomp]
-    _     = as ^ n * ar ^ n := hcomm.mul_pow n
-    _     = 1 * ar ^ n := by rw [this]
-    _     = ar ^ n := by rw [one_mul]
+    a ^ n = (s * r) ^ n := by rw [hdecomp]
+    _     = s ^ n * r ^ n := hcomm.mul_pow n
+    _     = 1 * r ^ n := by rw [this]
+    _     = r ^ n := by rw [one_mul]
 
 end pDecomposition
 
