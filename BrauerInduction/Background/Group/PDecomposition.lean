@@ -34,7 +34,7 @@ where `s` is `p`-singular and `r` is `p`-regular.
 
 -/
 
-universe u v
+universe u
 
 variable {G : Type u} [Group G]
 variable (p : ℕ)
@@ -310,7 +310,6 @@ lemma pRegular_map {H : Type v} [Group H] (f : G →* H) (hf : Function.Injectiv
   have h_ord : orderOf (f a) = orderOf a := orderOf_injective f hf a
   simp only [pRegular, h_ord, Nat.cast_pow, map_zpow]
 
-/-- `orderOf (pRegular p x)` divides the `p'`-part `ordCompl[p] (orderOf x)`. -/
 theorem orderOf_pRegular_dvd (a : G) :
     orderOf (pRegular p a) ∣ ordCompl[p] (orderOf a) := by
   let n := ordProj[p] (orderOf a)
